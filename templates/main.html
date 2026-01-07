@@ -378,48 +378,61 @@
             <!-- Content Iframes (Hidden by default) -->
             <div id="dashboard-view" class="hidden absolute inset-0 w-full h-full"><iframe id="dashboard-iframe"
                     src="/dashboard" class="opacity-0 transition-opacity duration-500 w-full h-full"
-                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+                    onload="this.classList.remove('opacity-0'); typeof syncThemeToFrame === 'function' && syncThemeToFrame(this)"></iframe>
+            </div>
             <div id="palo-alto-view" class="hidden absolute inset-0 w-full h-full"><iframe id="rule-manager-iframe"
                     src="/palo-manager" class="opacity-0 transition-opacity duration-500 w-full h-full"
-                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+                    onload="this.classList.remove('opacity-0'); typeof syncThemeToFrame === 'function' && syncThemeToFrame(this)"></iframe>
+            </div>
             <div id="object-creator-view" class="hidden absolute inset-0 w-full h-full"><iframe
                     id="object-creator-iframe" src="/object-creator"
                     class="opacity-0 transition-opacity duration-500 w-full h-full"
-                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+                    onload="this.classList.remove('opacity-0'); typeof syncThemeToFrame === 'function' && syncThemeToFrame(this)"></iframe>
+            </div>
             <div id="policy-match-view" class="hidden absolute inset-0 w-full h-full"><iframe src="/policy-match-tool"
                     class="opacity-0 transition-opacity duration-500 w-full h-full"
-                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+                    onload="this.classList.remove('opacity-0'); typeof syncThemeToFrame === 'function' && syncThemeToFrame(this)"></iframe>
+            </div>
             <div id="policy-inventory-view" class="hidden absolute inset-0 w-full h-full"><iframe
                     id="policy-inventory-iframe" src="about:blank"
                     class="opacity-0 transition-opacity duration-500 w-full h-full"
-                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+                    onload="this.classList.remove('opacity-0'); typeof syncThemeToFrame === 'function' && syncThemeToFrame(this)"></iframe>
+            </div>
             <div id="log-viewer-view" class="hidden absolute inset-0 w-full h-full"><iframe id="traffic-logs-iframe"
                     src="about:blank" class="opacity-0 transition-opacity duration-500 w-full h-full"
-                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+                    onload="this.classList.remove('opacity-0'); typeof syncThemeToFrame === 'function' && syncThemeToFrame(this)"></iframe>
+            </div>
             <div id="my-requests-view" class="hidden absolute inset-0 w-full h-full"><iframe src="/my-requests-tool"
                     class="opacity-0 transition-opacity duration-500 w-full h-full"
-                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+                    onload="this.classList.remove('opacity-0'); typeof syncThemeToFrame === 'function' && syncThemeToFrame(this)"></iframe>
+            </div>
             <div id="my-objects-view" class="hidden absolute inset-0 w-full h-full"><iframe src="/my-objects-tool"
                     class="opacity-0 transition-opacity duration-500 w-full h-full"
-                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+                    onload="this.classList.remove('opacity-0'); typeof syncThemeToFrame === 'function' && syncThemeToFrame(this)"></iframe>
+            </div>
             <div id="admin-approval-view" class="hidden absolute inset-0 w-full h-full"><iframe id="approval-iframe"
                     src="/admin-approval-tool" class="opacity-0 transition-opacity duration-500 w-full h-full"
-                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+                    onload="this.classList.remove('opacity-0'); typeof syncThemeToFrame === 'function' && syncThemeToFrame(this)"></iframe>
+            </div>
             <div id="object-approval-view" class="hidden absolute inset-0 w-full h-full"><iframe
                     src="/object-approval-tool" class="opacity-0 transition-opacity duration-500 w-full h-full"
-                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+                    onload="this.classList.remove('opacity-0'); typeof syncThemeToFrame === 'function' && syncThemeToFrame(this)"></iframe>
+            </div>
             <div id="audit-logs-view" class="hidden absolute inset-0 w-full h-full"><iframe id="audit-logs-iframe"
                     src="about:blank" class="opacity-0 transition-opacity duration-500 w-full h-full"
-                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+                    onload="this.classList.remove('opacity-0'); typeof syncThemeToFrame === 'function' && syncThemeToFrame(this)"></iframe>
+            </div>
 
             <!-- NetMgmt Views -->
             <div id="net-mgmt-dashboard-view" class="hidden absolute inset-0 w-full h-full"><iframe id="net-mgmt-iframe"
                     src="about:blank" class="opacity-0 transition-opacity duration-500 w-full h-full"
-                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+                    onload="this.classList.remove('opacity-0'); typeof syncThemeToFrame === 'function' && syncThemeToFrame(this)"></iframe>
+            </div>
             <div id="net-mgmt-topology-view" class="hidden absolute inset-0 w-full h-full"><iframe
                     id="net-mgmt-topology-iframe" src="about:blank"
                     class="opacity-0 transition-opacity duration-500 w-full h-full"
-                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+                    onload="this.classList.remove('opacity-0'); typeof syncThemeToFrame === 'function' && syncThemeToFrame(this)"></iframe>
+            </div>
 
             <!-- Env Config View -->
             <div id="env-config-view" class="hidden h-full flex flex-col animate-fade-in">

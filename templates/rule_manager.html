@@ -663,7 +663,73 @@
                 if (event.data.theme === 'light') document.body.classList.add('light-mode');
                 else document.body.classList.remove('light-mode');
             }
+            else if (event.data.type === 'FILL_RULE' && event.data.data) {
+                // Fill form from traffic log entry
+                const log = event.data.data;
+                console.log('📋 FILL_RULE received:', log);
+
+                // Wait for params to load
+                paramsPromise.then(() => {
+                    console.log('✅ Params loaded, filling form...');
+
+                    // Fill zones (these are select dropdowns)
+                    if (log.src_zone) {
+                        setDropdownValue('from_zone', log.src_zone);
+                        console.log('Set from_zone:', log.src_zone);
+                    }
+                    if (log.dst_zone) {
+                        setDropdownValue('to_zone', log.dst_zone);
+                        console.log('Set to_zone:', log.dst_zone);
+                    }
+
+                    // Fill IPs (these are text inputs, not dropdowns!)
+                    if (log.source) {
+                        document.getElementById('source_ip').value = log.source;
+                        console.log('Set source_ip:', log.source);
+                    }
+                    if (log.destination) {
+                        document.getElementById('destination_ip').value = log.destination;
+                        console.log('Set destination_ip:', log.destination);
+                    }
+
+                    // Fill application
+                    if (log.app && log.app !== 'insufficient-data') {
+                        document.getElementById('application').value = log.app;
+                        console.log('Set application:', log.app);
+                    }
+
+                    // Fill service/port - Backend expects port number only (e.g., "443"), not "443/UDP"
+                    if (log.dst_port) {
+                        document.getElementById('service_port').value = log.dst_port;
+                        console.log('Set service_port:', log.dst_port);
+                    }
+
+                    console.log('✅ Form filled successfully from traffic log');
+                });
+            }
         });
+
+        // Helper function to set dropdown value if exists
+        function setDropdownValue(selectId, value) {
+            const select = document.getElementById(selectId);
+            if (!select) {
+                console.warn(`Dropdown not found: ${selectId}`);
+                return;
+            }
+
+            // Check if value exists in options
+            const option = Array.from(select.options).find(opt => opt.value === value);
+            if (option) {
+                select.value = value;
+                console.log(`✓ Dropdown ${selectId} set to existing value:`, value);
+            } else {
+                // Add as first option if not found
+                const newOption = new Option(value, value);
+                select.add(newOption, 0);
+                select.value = value;
+                console.log(`⊕ Dropdown ${selectId} added new option and set to:`, value);
+            }
+        }
         syncTheme();
 
         /* --- Application Logic --- */
@@ -843,22 +909,27 @@
             const svc = document.getElementById('service_port').value || 'application-default';
 
             // Format: [src] to [dst] in [port|app]
-            // If service is generic (any/app-default), use App Name, otherwise use Service Port
+            // SANITIZATION FIX: Pydantic expects ^[A-Za-z0-9 _\-]+$
+            // Replace dots, slashes, and other special chars with underscores
             const connector = (svc === 'application-default' || svc === 'any') ? app : svc;
-            const autoName = `${src} to ${dst} in ${connector}`;
+            const safeSrc = src.replace(/[^a-zA-Z0-9_\-]/g, '_');
+            const safeDst = dst.replace(/[^a-zA-Z0-9_\-]/g, '_');
+            const safeConnector = connector.replace(/[^a-zA-Z0-9_\-]/g, '_');
+
+            const autoName = `${safeSrc}_to_${safeDst}_in_${safeConnector}`;
 
             const status = document.getElementById('status-msg');
             status.textContent = "TRANSMITTING..."; status.classList.remove('hidden'); status.style.color = 'var(--text-muted)';
 
-            // TODO: Maybe show the generated name to user before submit? 
-            // For now, sending it directly.
+            // Clean service port (remove /UDP, /TCP) for backend validation
+            const cleanSvc = svc.replace(/\/.*/, '');
 
             const data = {
                 rule_name: autoName,
                 source_ip: src,
                 destination_ip: dst,
                 application: app,
-                service_port: svc,
+                service_port: cleanSvc,
                 from_zone: document.getElementById('from_zone').value, to_zone: document.getElementById('to_zone').value,
                 tag: document.getElementById('tag').value || 'None', group_tag: document.getElementById('group_tag').value
             };
