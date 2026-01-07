@@ -24,8 +24,10 @@ from panos.objects import (
     AddressObject as PanAddressObject, 
     ServiceObject as PanServiceObject, 
     ServiceGroup as PanServiceGroup,  # הוספת הייבוא החסר
-    Tag as PanTag
+    Tag as PanTag,
+    ApplicationObject as PanApplicationObject
 )
+from managers.models import Zone, Tag
 from panos.policies import SecurityRule as PanSecurityRule, Rulebase
 
 # 4. Local Application Imports (Project Specific)
@@ -227,51 +229,56 @@ def get_all_policies() -> Response:
 
 @ops_bp.route('/get-params', methods=['GET'])
 def get_params() -> Response:
-    """Fetches metadata (Zones, Apps, Tags) with memory caching."""
-    current_time = time.time()
-    if not hasattr(db, 'firewall_cache'):
-        db.firewall_cache = {"data": None, "last_updated": 0}
-
-    if db.firewall_cache["data"] and (current_time - db.firewall_cache["last_updated"] < 300):
-        return jsonify(db.firewall_cache["data"])
-        
+    """Fetches metadata (Zones, Apps, Tags) from Local DB (Zero Dependency)."""
     try:
-        # refresh_fw_cache()
-        fw = FwService.get_connection()
-        
-        zone_list = sorted([z.name for z in Zone.refreshall(fw) if z.name])
-        svc_objs = PanServiceObject.refreshall(fw)
-        svc_groups = PanServiceGroup.refreshall(fw)
-        
-        # Merge objects and groups for the dropdown
-        svc_list = sorted([s.name for s in svc_objs if s.name] + [g.name for g in svc_groups if g.name])
-        
-        if 'any' not in zone_list: zone_list.insert(0, 'any')
-        if 'application-default' not in svc_list: svc_list.insert(0, 'application-default')
+        from managers.models import AddressObject, ServiceObject, ApplicationObject, Zone
+        from sqlalchemy import or_
 
-        addr_objs = PanAddressObject.refreshall(fw)
-        group_objs = PanAddressGroup.refreshall(fw)
+        # 1. Fetch Zones
+        zones = [z.name for z in Zone.query.order_by(Zone.name).all()]
+        if 'any' not in zones: zones.insert(0, 'any')
+
+        # 2. Fetch Services
+        # Services (excluding groups first)
+        services = [s.name for s in ServiceObject.query.filter_by(is_group=False).order_by(ServiceObject.name).all()]
+        # Service Groups
+        svc_groups = [g.name for g in ServiceObject.query.filter_by(is_group=True).order_by(ServiceObject.name).all()]
         
-        address_map = {a.name: a.value for a in addr_objs if a.name}
-        full_addr_list = sorted([a.name for a in addr_objs if a.name] + 
-                                [g.name for g in group_objs if g.name])
+        full_svc_list = sorted(services + svc_groups)
+        if 'application-default' not in full_svc_list: full_svc_list.insert(0, 'application-default')
+        if 'any' not in full_svc_list: full_svc_list.insert(0, 'any')
+
+        # 3. Fetch Addresses
+        addr_objs = AddressObject.query.filter_by(is_group=False).all()
+        addr_groups = AddressObject.query.filter_by(is_group=True).all()
+        
+        address_map = {a.name: a.value for a in addr_objs}
+        full_addr_list = sorted([a.name for a in addr_objs] + [g.name for g in addr_groups])
+        
+        # 4. Fetch Applications (The Fix!)
+        # Fetching everything. Frontend slicing limits display, but data must be there.
+        # DB now contains all custom + predefined apps.
+        apps = [a.name for a in ApplicationObject.query.order_by(ApplicationObject.name).all()]
+        if 'any' not in apps: apps.insert(0, 'any')
+        
+        # 5. Tags (Synced from DB)
+        tags = sorted([t.name for t in Tag.query.order_by(Tag.name).all()])
+        if not tags: tags = [] 
 
         response_data = {
             "status": "success", 
-            "zones": zone_list, 
-            "services": svc_list, 
+            "zones": zones, 
+            "services": full_svc_list, 
             "addresses": full_addr_list,
             "address_map": address_map,
-            "address_groups": sorted([g.name for g in group_objs if g.name]),
-            "applications": ["any", "web-browsing", "ssl", "dns", "ping", "ssh", "active-directory"], 
-            "tags": sorted([t.name for t in PanTag.refreshall(fw) if t.name]) if PanTag else []
+            "address_groups": sorted([g.name for g in addr_groups]),
+            "applications": apps, 
+            "tags": tags
         }
         
-        db.firewall_cache["data"] = response_data
-        db.firewall_cache["last_updated"] = current_time
         return jsonify(response_data)
     except Exception as e:
-        logging.error(f"Get Params API Error: {str(e)}")
+        logging.error(f"Get Params DB Error: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 

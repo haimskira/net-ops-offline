@@ -1,292 +1,668 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Palo Alto Rule Manager Pro</title>
-
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-
+    <title>Rule Manager Pro</title>
     <style>
-        @font-face {
-            font-family: 'Assistant';
-            src: url("{{ url_for('static', filename='fonts/Assistant-Regular.ttf') }}") format('truetype');
-            font-weight: 400;
+        /* 
+         * NO EXTERNAL DEPENDENCIES
+         * Design System: "Environment Config" 
+         */
+        :root {
+            /* Palette - Dark Mode (Default) */
+            --bg-primary: #020617;
+            /* Deepest Navy */
+            --bg-panel: #0f172a;
+            /* Panel Navy */
+            --bg-input: #1e293b;
+            /* Slate Blue Input */
+            --text-main: #f8fafc;
+            /* White-ish */
+            --text-muted: #94a3b8;
+            /* Muted Slate */
+            --accent-color: #06b6d4;
+            /* Neon Cyan */
+            --accent-hover: #0891b2;
+            --border-color: #334155;
+            /* Subtle Border */
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --input-height: 48px;
+            --radius-md: 6px;
         }
 
-        @font-face {
-            font-family: 'Assistant';
-            src: url("{{ url_for('static', filename='fonts/Assistant-Bold.ttf') }}") format('truetype');
-            font-weight: 700;
+        /* Light Mode Variables */
+        body.light-mode {
+            --bg-primary: #f1f5f9;
+            --bg-panel: #ffffff;
+            --bg-input: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Assistant', sans-serif !important;
-            background-color: var(--color-slate-950);
-            color: var(--color-slate-100);
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, sans-serif;
             margin: 0;
-            padding: 20px;
-            transition: background-color 0.3s, color 0.3s;
+            padding: 40px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        .glass-card {
-            background: rgba(30, 41, 59, 0.4);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        /* Theme overrides via CSS vars logic where possible, or specific class in theme.css */
-        .glass-card {
-            background-color: var(--color-slate-900);
-            background: rgba(var(--color-slate-900), 0.7);
-            /* Using fallback */
-            /* Actually simply using the var is safer if theme uses solid colors */
-            background-color: var(--color-slate-900);
-            border-color: var(--color-slate-800);
-        }
-
-        .spinner {
-            border-top-color: transparent;
-            animation: rot 1s linear infinite;
-        }
-
-        @keyframes rot {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        .result-card {
-            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        input,
-        select {
-            background-color: var(--color-slate-800) !important;
-            border: 1px solid var(--color-slate-700) !important;
-            color: var(--color-slate-100) !important;
+        /* --- Layout Grid --- */
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
             width: 100%;
-            padding: 12px;
-            border-radius: 12px;
+        }
+
+        /* --- Header --- */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(6, 182, 212, 0.15);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1.5rem;
+            color: var(--accent-color);
+        }
+
+        .header-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        .header-info h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 4px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .header-info p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-family: monospace;
+        }
+
+        /* Theme Toggle Removed - Controlled by Navbar */
+
+        /* --- Main Panel --- */
+        .config-panel {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Identity Row --- */
+        .identity-row {
+            padding: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            /* EQUAL COLUMNS as requested */
+            gap: 2rem;
+            align-items: end;
+        }
+
+        /* --- Traffic Grid --- */
+        .traffic-engine {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .engine-col {
+            padding: 2rem;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .engine-col:last-child {
+            border-right: none;
+        }
+
+        .col-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent-color);
+        }
+
+        .col-header svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        .col-header.logic {
+            color: #a5b4fc;
+        }
+
+        .col-header.dst {
+            color: var(--success-color);
+        }
+
+        /* --- Inputs --- */
+        .input-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Fix for Grid Alignment: Override margin for identity row items */
+        .identity-row .input-group {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-family: monospace;
+        }
+
+        input {
+            width: 100%;
+            height: var(--input-height);
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            padding: 0 1rem;
+            font-family: system-ui, monospace;
+            font-size: 0.95rem;
+            appearance: none;
             outline: none;
             transition: all 0.2s;
         }
 
-        input:focus,
-        select:focus {
-            border-color: var(--color-indigo-500) !important;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 1px var(--accent-color);
         }
 
-        .live-results {
-            position: absolute;
-            z-index: 100;
+        input::placeholder {
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+
+        /* --- Custom Dropdowns --- */
+        select.hidden-native {
+            display: none;
+        }
+
+        .custom-select {
+            position: relative;
+            user-select: none;
             width: 100%;
-            background: var(--color-slate-800);
-            border: 1px solid var(--color-slate-700);
-            border-radius: 12px 12px 0 0;
-            /* Rounded top */
-            max-height: 220px;
-            overflow-y: auto;
-            box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.7);
-            bottom: 100%;
-            /* Open Upwards */
-            margin-bottom: 5px;
+            height: var(--input-height);
         }
 
-        .result-item {
-            padding: 10px 15px;
-            cursor: pointer;
-            border-bottom: 1px solid var(--color-slate-700);
+        .select-trigger {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            height: 100%;
+            width: 100%;
             display: flex;
+            align-items: center;
             justify-content: space-between;
+            padding: 0 1rem;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .select-trigger:hover {
+            border-color: var(--text-muted);
+        }
+
+        .select-trigger span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .select-arrow {
+            width: 12px;
+            height: 12px;
+            margin-left: 10px;
+            fill: var(--accent-color);
+            opacity: 0.8;
+            transition: transform 0.2s;
+        }
+
+        .custom-select.open .select-arrow {
+            transform: rotate(180deg);
+        }
+
+        .custom-select.open .select-trigger {
+            border-color: var(--accent-color);
+        }
+
+        .select-options {
+            position: absolute;
+            top: 105%;
+            left: 0;
+            right: 0;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            z-index: 100;
+            max-height: 250px;
+            overflow-y: auto;
+            display: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .custom-select.open .select-options {
+            display: block;
+        }
+
+        .select-option {
+            padding: 10px 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+        }
+
+        .select-option:hover {
+            background-color: rgba(6, 182, 212, 0.1);
+            color: var(--accent-color);
+        }
+
+        .select-option.selected {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        /* --- Footer --- */
+        .footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--border-color);
+            background-color: rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: flex-end;
             align-items: center;
         }
 
-        .result-item:hover {
-            background-color: var(--color-slate-700);
+        .btn-submit {
+            background-color: var(--accent-color);
+            color: #0b1120;
+            border: none;
+            height: var(--input-height);
+            padding: 0 2rem;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
         }
 
-        .result-item .sub-val {
-            font-size: 0.75rem;
-            color: var(--color-slate-400);
+        .btn-submit:hover {
+            background-color: var(--accent-hover);
         }
 
-        button:disabled {
+        .btn-submit:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            filter: grayscale(1);
         }
 
-        .auto-detect-badge {
+        .btn-submit svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        /* --- Utilities --- */
+        .badge {
             font-size: 0.65rem;
             padding: 2px 6px;
             border-radius: 4px;
-            background: #4f46e5;
-            color: white;
-            margin-right: 5px;
+            border: 1px solid;
+            font-family: monospace;
+            margin-left: 8px;
         }
 
-        input:disabled,
-        select:disabled {
-            background-color: var(--color-slate-950) !important;
-            opacity: 0.4;
-            cursor: not-allowed;
-            border-style: dashed !important;
+        .badge-auto {
+            color: #a5b4fc;
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.1);
         }
 
-        .shake {
-            animation: shake 0.4s ease-in-out;
+        .hidden {
+            display: none !important;
         }
 
-        @keyframes shake {
+        /* Alerts */
+        .alert-box {
+            padding: 1rem;
+            margin: 0 2rem 1rem 2rem;
+            border: 1px solid;
+            border-radius: var(--radius-md);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
 
-            0%,
-            100% {
-                transform: translateX(0);
+        .alert-box.danger {
+            border-color: var(--danger-color);
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+        }
+
+        .alert-box.success {
+            border-color: var(--success-color);
+            background: rgba(16, 185, 129, 0.1);
+            color: #34d399;
+        }
+
+        .alert-box svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        /* Spinner */
+        #loader {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: monospace;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .spin-circle {
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
             }
-
-            25% {
-                transform: translateX(-6px);
-            }
-
-            75% {
-                transform: translateX(6px);
-            }
         }
 
-        /* Specific overrides for light mode if needed for specific elements that don't map well 
-           (e.g. gradients or transparency). Handled mostly by theme.css variables.
-        */
+        /* Autocomplete Results */
+        .live-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            z-index: 200;
+            max-height: 200px;
+            overflow-y: auto;
+            border-radius: 0 0 var(--radius-md) var(--radius-md);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .res-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .res-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--accent-color);
+        }
     </style>
 </head>
 
-<body class="min-h-screen">
+<body>
 
-    <div class="max-w-4xl mx-auto glass-card shadow-2xl rounded-3xl overflow-hidden mt-10">
-        <div class="bg-indigo-600/20 p-8 border-b border-slate-700 flex justify-between items-center">
-            <div>
-                <h1 class="text-3xl font-extrabold tracking-tight text-indigo-400">Rule Manager Pro</h1>
-                <p class="text-slate-400 mt-1">Rule Request Form</p>
+    <div class="container">
+        <header class="header">
+            <div class="header-icon">
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M7.5 5.6L10 7 8.6 4.5 10 2 7.5 3.4 5 2 6.4 4.5 5 7zM19 2l-2.5 1.4L14 2l1.4 2.5L14 7l2.5-1.4L19 7l-1.4-2.5zm-5.6 5.6L11 2.5 8.4 7.6 3.3 10.2l5.1 2.6L11 17.9l2.6-5.1 5.1-2.6z" />
+                </svg>
             </div>
-            <div id="loading-indicator"
-                class="flex items-center gap-3 bg-slate-900/80 px-5 py-2 rounded-full border border-indigo-500/30">
-                <div class="spinner w-4 h-4 border-2 border-indigo-400 rounded-full"></div>
-                <span class="text-sm font-medium text-slate-300">Loading infrastructure...</span>
+            <div class="header-info">
+                <h1>Rule Manager Pro</h1>
             </div>
-        </div>
-
-        <div class="p-8">
-            <div id="shadow-check-container" class="mb-6 hidden">
-                <div id="shadow-alert"
-                    class="flex items-center gap-3 p-4 rounded-2xl border transition-all duration-300"></div>
+            <!-- Theme Toggle Removed -->
+            <div id="loader" class="hidden" style="margin-left: auto;">
+                <div class="spin-circle"></div> CONNECTING...
             </div>
+        </header>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="md:col-span-2 space-y-2">
-                    <label class="font-bold text-slate-400 block text-sm ml-1">Rule Name</label>
-                    <input type="text" id="rule_name" placeholder="Enter rule name (Required)">
-                </div>
+        <div class="config-panel">
+            <!-- Identity -->
+            <div class="identity-row">
 
-                <div class="space-y-2">
-                    <label class="font-bold text-slate-400 block text-sm ml-1 flex items-center">
-                        From Zone <span id="src-zone-status" class="hidden auto-detect-badge">Auto-detected</span>
-                    </label>
-                    <select id="from_zone"></select>
-                </div>
-                <div class="space-y-2">
-                    <label class="font-bold text-slate-400 block text-sm ml-1 flex items-center">
-                        To Zone <span id="dst-zone-status" class="hidden auto-detect-badge">Auto-detected</span>
-                    </label>
-                    <select id="to_zone"></select>
-                </div>
-
-                <div class="space-y-4 bg-slate-900/30 p-4 rounded-2xl border border-slate-800">
-                    <div class="space-y-2 relative">
-                        <label class="font-bold text-indigo-400 block text-sm">Source IP/Object</label>
-                        <input id="source_ip" autocomplete="off" placeholder="Type IP or Object name..."
-                            oninput="handleInputProcessing(this, 'src')">
-                        <div id="src_results" class="live-results hidden"></div>
-                    </div>
-                    <select id="source_group" onchange="handleMutualExclusion('source_group', 'source_ip')">
-                        <option value="">-- Select Group from DB --</option>
-                    </select>
-                </div>
-
-                <div class="space-y-4 bg-slate-900/30 p-4 rounded-2xl border border-slate-800">
-                    <div class="space-y-2 relative">
-                        <label class="font-bold text-indigo-400 block text-sm">Destination IP/Object</label>
-                        <input id="destination_ip" autocomplete="off" placeholder="Type IP or Object name..."
-                            oninput="handleInputProcessing(this, 'dst')">
-                        <div id="dst_results" class="live-results hidden"></div>
-                    </div>
-                    <select id="destination_group"
-                        onchange="handleMutualExclusion('destination_group', 'destination_ip')">
-                        <option value="">-- Select Group from DB --</option>
-                    </select>
-                </div>
-
-                <div class="space-y-2 relative">
-                    <label class="font-bold text-indigo-400 block text-sm ml-1">Application</label>
-                    <input id="application" autocomplete="off" value="any"
-                        oninput="handleLiveSearch(this, 'app', fwAppList)">
-                    <div id="app_results" class="live-results hidden"></div>
-                </div>
-
-                <div class="space-y-2 relative">
-                    <label class="font-bold text-indigo-400 block text-sm ml-1">Service (Port)</label>
-                    <input id="service_port" autocomplete="off" placeholder="Search port or service..."
-                        oninput="handleLiveSearch(this, 'service', fwServiceList)">
-                    <div id="service_results" class="live-results hidden"></div>
-                </div>
-
-                <div class="space-y-2 relative">
-                    <label class="font-bold text-slate-400 block text-sm ml-1">Tag (Expiration)</label>
-                    <input id="tag" autocomplete="off" placeholder="Search TAG..."
+                <div class="input-group">
+                    <label>Tag</label>
+                    <input type="text" id="tag" placeholder="Search..." autocomplete="off"
                         oninput="handleLiveSearch(this, 'tag', fwTagList)">
                     <div id="tag_results" class="live-results hidden"></div>
                 </div>
-
-                <div class="space-y-2 relative">
-                    <label class="font-bold text-orange-400 block text-sm ml-1">Group Tag</label>
-                    <input id="group_tag" autocomplete="off" placeholder="G-... tag group"
+                <div class="input-group">
+                    <label>Group Tag</label>
+                    <!-- Aligned on same row -->
+                    <input type="text" id="group_tag" placeholder="Search..." autocomplete="off"
                         oninput="handleLiveSearch(this, 'group_tag', fwGroupTagList)">
                     <div id="group_tag_results" class="live-results hidden"></div>
                 </div>
             </div>
 
-            <div class="mt-10">
-                <button id="submit-btn" onclick="submitAction('/create-rule')"
-                    class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl shadow-lg transition transform active:scale-[0.98]">
-                    Submit Rule Request for Approval
-                </button>
+            <div id="shadow-container" class="hidden" style="padding-top: 2rem;">
+                <div id="shadow-box" class="alert-box"></div>
             </div>
 
-            <div id="status" class="mt-8 p-4 rounded-2xl hidden text-center font-bold border"></div>
+            <!-- Traffic -->
+            <div class="traffic-engine">
+                <!-- Source -->
+                <div class="engine-col">
+                    <div class="col-header">
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M2.5 19h19v2h-19zm19.57-9.36c-.21-.8-1.04-1.28-1.84-1.06L14.92 10l-6.9-6.43-1.93.51 4.14 7.17-4.97 1.33-1.97-1.54-1.45.39 1.82 3.16.77 1.33 16.02-4.3c.8-.21 1.28-1.05 1.07-1.85z" />
+                        </svg>
+                        Source Definition
+                    </div>
+
+                    <div class="input-group">
+                        <label>From Zone <span id="src-zone-status" class="badge badge-auto hidden">AUTO</span></label>
+                        <select id="from_zone" class="hidden-native custom-enabled"></select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Source Address</label>
+                        <input id="source_ip" placeholder="IP / Object..." autocomplete="off"
+                            oninput="handleInputProcessing(this, 'src')">
+                        <div id="src_results" class="live-results hidden"></div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Source Group</label>
+                        <select id="source_group" class="hidden-native custom-enabled"
+                            onchange="handleMutualExclusion('source_group', 'source_ip')">
+                            <option value="">Select Group...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Logic -->
+                <div class="engine-col">
+                    <div class="col-header logic">
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
+                        </svg>
+                        Traffic Logic
+                    </div>
+
+                    <div class="input-group">
+                        <label>Application</label>
+                        <input id="application" value="any" autocomplete="off"
+                            oninput="handleLiveSearch(this, 'app', fwAppList)">
+                        <div id="app_results" class="live-results hidden"></div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Service / Port</label>
+                        <input id="service_port" value="application-default" autocomplete="off"
+                            oninput="handleLiveSearch(this, 'service', fwServiceList)">
+                        <div id="service_results" class="live-results hidden"></div>
+                    </div>
+                </div>
+
+                <!-- Dest -->
+                <div class="engine-col">
+                    <div class="col-header dst">
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M22 9V7h-2V5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-2h2v-2h-2v-2h2v-2h-2V9h2zm-4 10H4V5h14v14zM6 13h5v4H6zm6-6h4v3h-4zM6 7h5v5H6zm6 4h4v6h-4z" />
+                        </svg>
+                        Destination
+                    </div>
+
+                    <div class="input-group">
+                        <label>To Zone <span id="dst-zone-status" class="badge badge-auto hidden">AUTO</span></label>
+                        <select id="to_zone" class="hidden-native custom-enabled"></select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Destination Address</label>
+                        <input id="destination_ip" placeholder="IP / Object..." autocomplete="off"
+                            oninput="handleInputProcessing(this, 'dst')">
+                        <div id="dst_results" class="live-results hidden"></div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Destination Group</label>
+                        <select id="destination_group" class="hidden-native custom-enabled"
+                            onchange="handleMutualExclusion('destination_group', 'destination_ip')">
+                            <option value="">Select Group...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <div id="status-msg" style="margin-right: 1.5rem; font-weight: 700; color: var(--accent-color);"
+                    class="hidden"></div>
+                <button id="submit-btn" class="btn-submit" onclick="submitAction('/create-rule')">
+                    SUBMIT CONFIG
+                    <svg viewBox="0 0 24 24">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                    </svg>
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
-        // --- State & Shared Variables ---
+        /* --- Pure JS Custom Dropdowns --- */
+        function initCustomDropdowns() {
+            document.querySelectorAll('select.custom-enabled').forEach(native => {
+                if (native.nextElementSibling && native.nextElementSibling.classList.contains('custom-select')) native.nextElementSibling.remove();
+
+                const wrapper = document.createElement('div'); wrapper.className = 'custom-select';
+                const trigger = document.createElement('div'); trigger.className = 'select-trigger';
+                const label = native.options[native.selectedIndex]?.text || "Select...";
+                trigger.innerHTML = `<span>${label}</span><svg class="select-arrow" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>`;
+
+                const options = document.createElement('div'); options.className = 'select-options';
+                Array.from(native.options).forEach(opt => {
+                    const item = document.createElement('div'); item.className = 'select-option';
+                    item.textContent = opt.text; item.dataset.value = opt.value;
+                    if (opt.selected) item.classList.add('selected');
+                    item.onclick = (e) => {
+                        e.stopPropagation();
+                        native.value = opt.value;
+                        native.dispatchEvent(new Event('change'));
+                        trigger.querySelector('span').textContent = opt.text;
+                        wrapper.classList.remove('open');
+                        options.querySelectorAll('.select-option').forEach(el => el.classList.remove('selected'));
+                        item.classList.add('selected');
+                    };
+                    options.appendChild(item);
+                });
+
+                trigger.onclick = (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('.custom-select').forEach(c => { if (c !== wrapper) c.classList.remove('open'); });
+                    wrapper.classList.toggle('open');
+                };
+
+                wrapper.appendChild(trigger); wrapper.appendChild(options);
+                native.parentNode.insertBefore(wrapper, native.nextSibling);
+
+                native.addEventListener('change', () => {
+                    const newLabel = native.options[native.selectedIndex]?.text;
+                    if (newLabel) trigger.querySelector('span').textContent = newLabel;
+                });
+            });
+
+            document.addEventListener('click', () => document.querySelectorAll('.custom-select').forEach(c => c.classList.remove('open')));
+        }
+
+        /* --- Theme Sync Logic --- */
+        function syncTheme() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'light') document.body.classList.add('light-mode');
+            else document.body.classList.remove('light-mode');
+        }
+        window.addEventListener('storage', syncTheme);
+        window.addEventListener('message', (event) => {
+            if (event.data === 'theme-toggle' || event.data.type === 'theme-toggle') document.body.classList.toggle('light-mode');
+            else if (event.data.type === 'set-theme') {
+                if (event.data.theme === 'light') document.body.classList.add('light-mode');
+                else document.body.classList.remove('light-mode');
+            }
+        });
+        syncTheme();
+
+        /* --- Application Logic --- */
         let fwObjectMap = {};
         let fwAppList = [];
         let fwServiceList = [];
@@ -294,53 +670,86 @@
         let fwGroupTagList = [];
         let isShadowBlocked = false;
         let shadowCheckTimeout;
+        let resolveParams; const paramsPromise = new Promise(r => resolveParams = r);
 
-        // Promise to handle race condition between Iframe load and PostMessage
-        let resolveParamsLoaded;
-        const paramsLoadedPromise = new Promise(r => resolveParamsLoaded = r);
-
-        /**
-         * טעינת פרמטרים וביצוע אכלוס רשימות ראשוני
-         */
         async function fetchParams() {
+            document.getElementById('loader').classList.remove('hidden');
             try {
                 const res = await fetch('/get-params');
                 const data = await res.json();
                 if (data.status === 'success') {
                     fwObjectMap = data.address_map || {};
+
+                    // DATA SOURCE: Ensuring we get the full list
                     fwAppList = data.applications || ["any"];
                     fwServiceList = data.services || ["any", "application-default"];
-                    fwTagList = ["None", ...(data.tags || []).filter(t => !t.startsWith('G'))];
-                    fwGroupTagList = (data.tags || []).filter(t => /^[gG0-9]/.test(t));
 
-                    // אכלוס Dropdowns רגילים
-                    const populateSelect = (id, items, def) => {
-                        const el = document.getElementById(id);
-                        if (!el) return;
-                        el.innerHTML = id.includes('group') ? '<option value="">-- Select Group --</option>' : '';
-                        let finalItems = [...items];
-                        if (id.includes('zone') && !finalItems.includes('any')) finalItems.unshift('any');
-                        finalItems.forEach(i => {
-                            const o = new Option(i, i);
-                            if (i === (def || (id.includes('zone') ? 'any' : ''))) o.selected = true;
-                            el.add(o);
-                        });
+                    // Allow ALL tags to show in both dropdowns (until clear distinction is made)
+                    fwTagList = ["None", ...(data.tags || [])];
+                    fwGroupTagList = ["Select...", ...(data.tags || [])];
+
+                    const populate = (id, items) => {
+                        const el = document.getElementById(id); if (!el) return;
+                        el.innerHTML = id.includes('group') ? '<option value="">Select Group...</option>' : '';
+                        let arr = [...items];
+                        if (id.includes('zone') && !arr.includes('any')) arr.unshift('any');
+                        arr.forEach(i => el.add(new Option(i, i)));
+                        if (id === 'from_zone' || id === 'to_zone') el.value = 'any';
                     };
 
-                    populateSelect('from_zone', data.zones);
-                    populateSelect('to_zone', data.zones);
-                    populateSelect('source_group', data.address_groups);
-                    populateSelect('destination_group', data.address_groups);
+                    populate('from_zone', data.zones);
+                    populate('to_zone', data.zones);
+                    populate('source_group', data.address_groups);
+                    populate('destination_group', data.address_groups);
 
-                    document.getElementById('loading-indicator').classList.add('hidden');
-                    resolveParamsLoaded(); // Signal that dropdowns are ready
+                    initCustomDropdowns();
+                    document.getElementById('loader').classList.add('hidden');
+                    resolveParams();
                 }
-            } catch (e) { console.error("Fetch params failed", e); }
+            } catch (e) { console.error(e); }
         }
 
-        /**
-         * עיבוד קלט חי לכתובות (IP/Object)
-         */
+        function handleLiveSearch(input, type, source) {
+            const query = input.value.toLowerCase().trim();
+            const box = document.getElementById(`${type}_results`);
+            box.innerHTML = "";
+
+            // SHOW ALL if empty and type is a searchable list
+            if (!query && !['app', 'service', 'tag', 'group_tag'].includes(type)) { box.classList.add('hidden'); return; }
+
+            let matches = [];
+            if (Array.isArray(source)) {
+                // SEARCH LOGIC: If query exists, filter. If not, show all (sliced to 500 for performance)
+                if (query) {
+                    matches = source.filter(s => s.toLowerCase().includes(query)).slice(0, 5000);
+                } else {
+                    matches = source.slice(0, 5000); // Show up to 5000 items if no query
+                }
+            } else {
+                matches = Object.entries(source).filter(([k, v]) => k.toLowerCase().includes(query) || (v && v.includes(query))).slice(0, 20);
+            }
+
+            if (!matches.length) { box.classList.add('hidden'); return; }
+
+            matches.forEach(m => {
+                const div = document.createElement('div'); div.className = 'res-item';
+                if (Array.isArray(source)) {
+                    div.textContent = m;
+                    div.onmousedown = () => { input.value = m; box.classList.add('hidden'); triggerShadowCheck(); };
+                } else {
+                    div.innerHTML = `<b>${m[0]}</b> <small>${m[1] || ''}</small>`;
+                    div.onmousedown = () => {
+                        input.value = m[0]; box.classList.add('hidden');
+                        handleMutualExclusion(input.id, type === 'src' ? 'source_group' : 'destination_group');
+                        runAutoZoneDetection(m[0], type);
+                        triggerShadowCheck();
+                    };
+                }
+                box.appendChild(div);
+            });
+            box.classList.remove('hidden');
+        }
+
         function handleInputProcessing(input, type) {
             handleLiveSearch(input, type, fwObjectMap);
             handleMutualExclusion(input.id, type === 'src' ? 'source_group' : 'destination_group');
@@ -349,271 +758,106 @@
             triggerShadowCheck();
         }
 
-        /**
-         * מנוע חיפוש חי גנרי (Autocomplete Engine)
-         */
-        function handleLiveSearch(input, type, dataSource) {
-            const query = input.value.toLowerCase().trim();
-            const resultsBox = document.getElementById(`${type}_results`);
-            if (!resultsBox) return;
-
-            resultsBox.innerHTML = "";
-            if (!query && !['app', 'service', 'tag', 'group_tag'].includes(type)) {
-                resultsBox.classList.add("hidden");
-                return;
-            }
-
-            let matches = [];
-            // תמיכה בחיפוש במילון (IPs) או במערך (Apps/Tags/Services)
-            if (Array.isArray(dataSource)) {
-                matches = dataSource.filter(i => i.toLowerCase().includes(query)).slice(0, 15);
-            } else {
-                matches = Object.entries(dataSource).filter(([name, ip]) =>
-                    name.toLowerCase().includes(query) || (ip && ip.includes(query))
-                ).slice(0, 15);
-            }
-
-            if (matches.length === 0) {
-                resultsBox.classList.add("hidden");
-                return;
-            }
-
-            matches.forEach(match => {
-                const item = document.createElement("div");
-                item.className = "result-item";
-
-                if (Array.isArray(dataSource)) {
-                    item.innerHTML = `<span>${match}</span>`;
-                    item.onmousedown = () => {
-                        input.value = match;
-                        resultsBox.classList.add("hidden");
-                        triggerShadowCheck();
-                    };
-                } else {
-                    const [name, ip] = match;
-                    item.innerHTML = `<span><strong>${name}</strong></span><span class="sub-val">${ip || ''}</span>`;
-                    item.onmousedown = () => {
-                        input.value = name;
-                        resultsBox.classList.add("hidden");
-                        handleMutualExclusion(input.id, type === 'src' ? 'source_group' : 'destination_group');
-                        runAutoZoneDetection(name, type);
-                        triggerShadowCheck();
-                    };
-                }
-                resultsBox.appendChild(item);
-            });
-            resultsBox.classList.remove("hidden");
-        }
-
         async function runAutoZoneDetection(val, type) {
             if (!val || val === 'any' || val.length < 3) return;
             try {
                 const res = await fetch(`/api/detect-zone?ip=${encodeURIComponent(val)}`);
                 const data = await res.json();
                 if (data.status === 'success' && data.zone) {
-                    document.getElementById(type === 'src' ? 'from_zone' : 'to_zone').value = data.zone;
+                    const el = document.getElementById(type === 'src' ? 'from_zone' : 'to_zone');
+                    el.value = data.zone;
+                    el.dispatchEvent(new Event('change'));
                     document.getElementById(`${type}-zone-status`).classList.remove('hidden');
                     triggerShadowCheck();
-                } else {
-                    document.getElementById(`${type}-zone-status`).classList.add('hidden');
                 }
-            } catch (e) { console.error("Zone detection error", e); }
+            } catch (e) { }
         }
 
         function triggerShadowCheck() {
-            clearTimeout(shadowCheckTimeout);
-            shadowCheckTimeout = setTimeout(runShadowCheck, 500);
+            clearTimeout(shadowCheckTimeout); shadowCheckTimeout = setTimeout(runShadowCheck, 500);
         }
 
         async function runShadowCheck() {
             const src = document.getElementById('source_ip').value || document.getElementById('source_group').value || 'any';
             const dst = document.getElementById('destination_ip').value || document.getElementById('destination_group').value || 'any';
-            const submitBtn = document.getElementById('submit-btn');
-
             const data = {
-                source_ip: src,
-                destination_ip: dst,
+                source_ip: src, destination_ip: dst,
                 service_port: document.getElementById('service_port').value,
                 application: document.getElementById('application').value || 'any',
                 from_zone: document.getElementById('from_zone').value,
                 to_zone: document.getElementById('to_zone').value
             };
-
             if (src === 'any' && dst === 'any' && data.from_zone === 'any') return;
 
             try {
-                const res = await fetch('/check-shadow', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const result = await res.json();
-                const container = document.getElementById('shadow-check-container');
-                const alertBox = document.getElementById('shadow-alert');
+                const res = await fetch('/check-shadow', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                const r = await res.json();
+                const box = document.getElementById('shadow-box');
+                const cont = document.getElementById('shadow-container');
+                const btn = document.getElementById('submit-btn');
 
-                if (result.status === 'shadowed') {
-                    container.classList.remove('hidden');
-                    isShadowBlocked = true;
-                    submitBtn.disabled = true;
-                    submitBtn.innerText = "Rule exists in system - Submission blocked";
-
-                    const isDeny = (result.action || '').toLowerCase() === 'deny';
-                    const colorClass = isDeny ? 'rose' : 'emerald';
-                    const icon = isDeny ? '⛔' : '✅';
-                    const actionName = (result.action || 'allow').toUpperCase();
-
-                    // Rich Card Styling
-                    alertBox.className = `p-6 rounded-2xl border border-${colorClass}-500/50 bg-${colorClass}-500/10 text-${colorClass}-400 result-card shadow-lg block`;
-
-                    alertBox.innerHTML = `
-                        <h3 class="text-xl font-bold mb-4 flex items-center gap-2 text-${colorClass}-400">
-                            <span>${icon}</span> Traffic Matches Existing Rule
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-left">
-                            <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
-                                <strong class="text-slate-500 block text-xs uppercase mb-1">Rule Name</strong> 
-                                <span class="text-indigo-400 font-bold">${result.rules[0]}</span>
-                            </div>
-                            <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
-                                <strong class="text-slate-500 block text-xs uppercase mb-1">Action</strong> 
-                                <span class="text-${colorClass}-400 font-bold">${actionName}</span>
-                            </div>
-                            <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
-                                <strong class="text-slate-500 block text-xs uppercase mb-1">Source</strong> 
-                                <span class="text-slate-200">${src}</span>
-                            </div>
-                            <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
-                                <strong class="text-slate-500 block text-xs uppercase mb-1">Destination</strong> 
-                                <span class="text-slate-200">${dst}</span>
-                            </div>
-                        </div>
-                    `;
+                if (r.status === 'shadowed') {
+                    cont.classList.remove('hidden'); isShadowBlocked = true; btn.disabled = true;
+                    const isDeny = (r.action || '').toLowerCase() === 'deny';
+                    box.className = `alert-box ${isDeny ? 'danger' : 'success'}`;
+                    box.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                <div><strong>SHADOW CONFLICT: ${r.rules[0]}</strong><div style="font-size:0.8rem">Effective Action: ${r.action.toUpperCase()}</div></div>`;
                 } else {
-                    isShadowBlocked = false;
-                    container.classList.add('hidden');
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = "Submit Rule Request for Approval";
+                    cont.classList.add('hidden'); isShadowBlocked = false; btn.disabled = false;
                 }
-            } catch (e) { console.error("Shadow check error", e); }
+            } catch (e) { }
         }
 
-        function handleMutualExclusion(activeId, inactiveId) {
-            const activeEl = document.getElementById(activeId);
-            const inactiveEl = document.getElementById(inactiveId);
-            if (!activeEl || !inactiveEl) return;
-            if (activeEl.value.trim() !== "") {
-                inactiveEl.disabled = true; inactiveEl.value = "";
-            } else {
-                inactiveEl.disabled = false;
-            }
+        function handleMutualExclusion(actId, inactId) {
+            const act = document.getElementById(actId); const inact = document.getElementById(inactId);
+            if (act.value) { inact.disabled = true; inact.value = ""; inact.placeholder = "LOCKED"; }
+            else { inact.disabled = false; inact.placeholder = "Input..."; }
         }
 
-        async function submitAction(endpoint) {
-            const nameField = document.getElementById('rule_name');
-            const status = document.getElementById('status');
-
-            if (!nameField.value.trim()) {
-                status.innerText = "⚠️ Rule name is required before submission";
-                status.className = "mt-8 p-4 rounded-2xl block border text-center font-bold bg-rose-500/10 text-rose-400 shake";
-                status.classList.remove('hidden');
-                nameField.focus();
-                return;
-            }
-
+        async function submitAction(ep) {
             if (isShadowBlocked) return;
 
+            // Auto-Generate Name Logic
+            const src = document.getElementById('source_ip').value || document.getElementById('source_group').value || 'any';
+            const dst = document.getElementById('destination_ip').value || document.getElementById('destination_group').value || 'any';
+            const app = document.getElementById('application').value || 'any';
+            const svc = document.getElementById('service_port').value || 'application-default';
+
+            // Format: [src] to [dst] in [port|app]
+            // If service is generic (any/app-default), use App Name, otherwise use Service Port
+            const connector = (svc === 'application-default' || svc === 'any') ? app : svc;
+            const autoName = `${src} to ${dst} in ${connector}`;
+
+            const status = document.getElementById('status-msg');
+            status.textContent = "TRANSMITTING..."; status.classList.remove('hidden'); status.style.color = 'var(--text-muted)';
+
+            // TODO: Maybe show the generated name to user before submit? 
+            // For now, sending it directly.
+
             const data = {
-                rule_name: nameField.value.trim(),
-                from_zone: document.getElementById('from_zone').value,
-                to_zone: document.getElementById('to_zone').value,
-                source_ip: document.getElementById('source_ip').value || document.getElementById('source_group').value || 'any',
-                destination_ip: document.getElementById('destination_ip').value || document.getElementById('destination_group').value || 'any',
-                application: document.getElementById('application').value || 'any',
-                service_port: document.getElementById('service_port').value || 'application-default',
-                tag: document.getElementById('tag').value || 'None',
-                group_tag: document.getElementById('group_tag').value
+                rule_name: autoName,
+                source_ip: src,
+                destination_ip: dst,
+                application: app,
+                service_port: svc,
+                from_zone: document.getElementById('from_zone').value, to_zone: document.getElementById('to_zone').value,
+                tag: document.getElementById('tag').value || 'None', group_tag: document.getElementById('group_tag').value
             };
 
-            status.innerText = "Sending request...";
-            status.className = "mt-8 p-4 rounded-2xl block border text-center font-bold bg-indigo-500/10 text-indigo-400";
-            status.classList.remove('hidden');
-
             try {
-                const res = await fetch(endpoint, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
-                });
+                const res = await fetch(ep, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
                 const r = await res.json();
-                status.innerText = r.message;
-                status.className = `mt-8 p-4 rounded-2xl block border text-center font-bold ${r.status === 'success' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`;
-                if (r.status === 'success') setTimeout(() => location.reload(), 2000);
-            } catch (e) { status.innerText = "Communication error with server"; }
+                status.textContent = r.message.toUpperCase();
+                status.style.color = r.status === 'success' ? 'var(--success-color)' : 'var(--danger-color)';
+                if (r.status === 'success') setTimeout(() => location.reload(), 1500);
+            } catch (e) { status.textContent = "COMMUNICATION FAILURE"; status.style.color = 'var(--danger-color)'; }
         }
 
-        /**
-         * מאזין להזרקת נתונים מה-Log Viewer
-         */
-        window.addEventListener('message', async function (event) {
-            if (event.data.type === 'FILL_RULE') {
-                await paramsLoadedPromise; // Wait for Dropdowns to populate
-
-                const log = event.data.data;
-                document.getElementById('rule_name').value = `RULE_${log.app.toUpperCase()}_${log.dst_port}`;
-                document.getElementById('source_ip').value = log.source;
-                document.getElementById('destination_ip').value = log.destination;
-                document.getElementById('application').value = log.app || 'any';
-                document.getElementById('service_port').value = log.dst_port || 'any';
-
-                // Robust setting of Select values (Case Insensitive)
-                const setSelect = (id, val) => {
-                    const sel = document.getElementById(id);
-                    if (!sel || !val) return;
-                    // Try exact match
-                    if ([...sel.options].some(o => o.value === val)) {
-                        sel.value = val;
-                        return;
-                    }
-                    // Try case-insensitive keys
-                    const found = [...sel.options].find(o => o.value.toLowerCase() === val.toLowerCase());
-                    if (found) sel.value = found.value;
-                };
-
-                if (log.src_zone) setSelect('from_zone', log.src_zone);
-                if (log.dst_zone) setSelect('to_zone', log.dst_zone);
-
-                handleMutualExclusion('source_ip', 'source_group');
-                handleMutualExclusion('destination_ip', 'destination_group');
-
-                const card = document.querySelector('.glass-card');
-                if (card) {
-                    card.style.boxShadow = "0 0 30px rgba(99, 102, 241, 0.4)";
-                    setTimeout(() => card.style.boxShadow = "", 1500);
-                }
-
-                triggerShadowCheck();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.live-results')) document.querySelectorAll('.live-results').forEach(el => el.classList.add('hidden'));
         });
 
-        // Initialization
         window.onload = fetchParams;
-
-        // האזנה לשינויים בשדות לצורך עדכון Shadow Check
-        ['from_zone', 'to_zone', 'service_port', 'source_group', 'destination_group'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.addEventListener('change', triggerShadowCheck);
-        });
-
-        // סגירת תוצאות בחיצה בחוץ
-        // Close dropdowns on click outside
-        document.addEventListener('click', function (e) {
-            const inputs = document.querySelectorAll('input');
-            let clickedInput = false;
-            inputs.forEach(i => { if (i.contains(e.target)) clickedInput = true; });
-
-            if (!clickedInput && !e.target.closest('.live-results')) {
-                document.querySelectorAll('.live-results').forEach(el => el.classList.add('hidden'));
-            }
-        });
     </script>
 </body>
 

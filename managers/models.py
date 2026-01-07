@@ -70,6 +70,11 @@ class AddressObject(db_sql.Model):
         backref='member_of'
     )
 
+class Zone(db_sql.Model):
+    __tablename__ = 'zones'
+    id = db_sql.Column(db_sql.Integer, primary_key=True)
+    name = db_sql.Column(db_sql.String(100), unique=True, index=True, nullable=False)
+
 class ServiceObject(db_sql.Model):
     __tablename__ = 'service_objects'
     id = db_sql.Column(db_sql.Integer, primary_key=True)
@@ -93,6 +98,12 @@ class ApplicationObject(db_sql.Model):
     name = db_sql.Column(db_sql.String(255), unique=True, index=True, nullable=False)
     value = db_sql.Column(db_sql.String(255)) # שונה מ-description ל-value לסנכרון תקין
     is_group = db_sql.Column(db_sql.Boolean, default=False)
+
+class Tag(db_sql.Model):
+    __tablename__ = 'tags'
+    id = db_sql.Column(db_sql.Integer, primary_key=True)
+    name = db_sql.Column(db_sql.String(100), unique=True, index=True, nullable=False)
+    color = db_sql.Column(db_sql.String(50)) # Optional: store color if needed
 
 class SecurityRule(db_sql.Model):
     __tablename__ = 'security_rules'

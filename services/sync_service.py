@@ -34,10 +34,18 @@ class SyncService:
             with db_sql.session.no_autoflush:
                 self._clear_database()
                 
-                # Create Base Objects
+                # 1. Sync Zones (Direct API Call as they aren't always in config dump depending on permission/scope)
+                self.sync_zones()
+
+                # 2. Create Base Objects
                 addr_map = self.sync_address_objects(fw_config.get('address', []), fw_config.get('address-group', []))
                 svc_map = self.sync_service_objects(fw_config.get('service', []), fw_config.get('service-group', []))
+                
+                # 3. Sync Applications (Config + Predefined via OP)
                 app_map = self.sync_application_objects(fw_config.get('applications', []) or fw_config.get('application', []))
+                
+                # 4. Sync Tags
+                self.sync_tags()
                 
                 db_sql.session.flush()
 
@@ -73,7 +81,30 @@ class SyncService:
         db_sql.session.query(AddressObject).delete()
         db_sql.session.query(ServiceObject).delete()
         db_sql.session.query(ApplicationObject).delete()
+        try:
+            from managers.models import Zone, Tag
+            db_sql.session.query(Zone).delete()
+            db_sql.session.query(Tag).delete()
+        except: pass
         db_sql.session.flush()
+
+        db_sql.session.flush()
+
+    def sync_zones(self):
+        from managers.models import Zone
+        from panos.network import Zone as PanZone
+        try:
+            pan_zones = PanZone.refreshall(self.fw)
+            # Add 'any' zone by default
+            db_sql.session.add(Zone(name='any'))
+            
+            for z in pan_zones:
+                if z.name:
+                    db_sql.session.add(Zone(name=z.name))
+            
+            logging.info(f"Synced {len(pan_zones)} Zones.")
+        except Exception as e:
+            logging.error(f"Zone Sync Error: {e}")
 
     def sync_address_objects(self, addr_list, group_list):
         name_to_id = {}
@@ -187,6 +218,15 @@ class SyncService:
 
     def sync_application_objects(self, app_list):
         name_to_id = {}
+        
+        # 1. Add Default/Predefined Logic Strings
+        defaults = ["any"]
+        for d in defaults:
+            obj = ApplicationObject(name=d, is_group=False, value='predefined')
+            db_sql.session.add(obj)
+            name_to_id[d.lower()] = obj.id
+
+        # 2. Add Configured Custom Apps
         for item in app_list:
             name = item.get('name')
             if not name or name.lower() in name_to_id: continue
@@ -194,7 +234,82 @@ class SyncService:
             db_sql.session.add(obj)
             db_sql.session.flush()
             name_to_id[name.lower()] = obj.id
+            
+        # 3. Fetch Predefined from OP Command (The Big List)
+        # 3. Fetch Predefined from OP Command (The Big List)
+        op_success = False
+        try:
+             import xml.etree.ElementTree as ET
+             logging.info("Sync: Fetching Full Application Database via OP...")
+             
+             op_res = None
+             try:
+                op_res = self.fw.op(cmd="request application list")
+             except Exception:
+                logging.warning("Sync: 'request application list' failed. Using strict fallback list.")
+             
+             if op_res is not None:
+                root = op_res if isinstance(op_res, ET.Element) else ET.fromstring(op_res)
+                count = 0
+                for entry in root.findall(".//entry"):
+                     name = entry.get('name')
+                     if name and name.lower() not in name_to_id:
+                         obj = ApplicationObject(name=name, is_group=False, value='predefined-op')
+                         db_sql.session.add(obj)
+                         name_to_id[name.lower()] = obj.id 
+                         count += 1
+                logging.info(f"Sync: Added {count} predefined applications to DB.")
+                op_success = True
+        except Exception as e:
+            logging.error(f"Sync: Failed to fetch predefined apps: {e}")
+        
+        # 4. Fallback: If OP failed, insert a robust list of 100+ common apps
+        if not op_success:
+            logging.info("Sync: Using Static Fallback App List (OP Failed).")
+            fallback_apps = [
+                "web-browsing", "ssl", "dns", "ping", "ssh", "ftp", "telnet", "smtp", "pop3", "imap",
+                "http", "https", "snmp", "ntp", "syslog", "dhcp", "ipsec-esp", "ike", "ldaps", "ldap",
+                "ms-rdp", "ms-ds-smb", "ms-netlogon", "active-directory", "kerberos", "mssql-db", "mysql",
+                "oracle", "postgresql", "git", "jenkins", "docker", "kubernetes", "aws-console", "azure-console",
+                "google-cloud-console", "office365-base", "office365-enterprise-access", "office365-sharepoint",
+                "outlook-web-online", "gmail", "google-drive", "dropbox", "box", "salesforce", "servicenow",
+                "slack", "zoom", "webex", "teams", "skype", "whatsapp", "facebook", "twitter", "linkedin",
+                "youtube", "netflix", "spotify", "amazon-s3", "github-base", "bitbucket", "gitlab", 
+                "jira", "confluence", "trello", "asana", "notion", "zendesk", "intercom", "stripe", "paypal",
+                "splunk", "datadog", "newrelic", "grafana", "prometheus", "elasticsearch", "mongodb", "redis",
+                "memcached", "rabbitmq", "kafka", "consul", "vault", "terraform", "ansible", "chef", "puppet",
+                "nagios", "zabbix", "solarwinds", "openvpn", "wireguard", "tor", "bittorrent", "steam",
+                "xbox", "playstation", "ubuntu-apt", "windows-update", "macos-update"
+            ]
+            for a in fallback_apps:
+                if a.lower() not in name_to_id:
+                    obj = ApplicationObject(name=a, is_group=False, value='predefined-static')
+                    db_sql.session.add(obj)
+                    name_to_id[a.lower()] = obj.id
+        
         return name_to_id
+
+    def sync_tags(self):
+        from managers.models import Tag
+        from panos.objects import Tag as PanTag
+        try:
+            pan_tags = PanTag.refreshall(self.fw)
+            count = 0
+            for t in pan_tags:
+                if t.name:
+                    db_sql.session.add(Tag(name=t.name, color=t.color))
+                    count += 1
+            logging.info(f"Synced {count} Tags.")
+        except Exception as e:
+            logging.error(f"Tag Sync Error: {e}")
+
+
+        db_sql.session.flush()
+        
+        # Optimization: Fetch all IDs back to ensure we have the full map for rules
+        # (Though rule sync uses name string matching mostly in our logic or map)
+        all_apps = db_sql.session.query(ApplicationObject).all()
+        return {a.name.lower(): a.id for a in all_apps}
 
     def sync_security_rules(self, rules_list, addr_map, svc_map, app_map):
         processed = set()
