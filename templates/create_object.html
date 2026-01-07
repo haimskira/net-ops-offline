@@ -1,402 +1,724 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NetOps - Create Object</title>
-
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=1.5">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/choices.min.css') }}">
-    <script src="{{ url_for('static', filename='js/choices.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-
+    <title>Create Object</title>
     <style>
-        @font-face {
-            font-family: 'Assistant';
-            src: url("{{ url_for('static', filename='fonts/Assistant-Regular.ttf') }}") format('truetype');
-            font-weight: 400;
+        /* 
+         * NO EXTERNAL DEPENDENCIES
+         * Design System: Inherited Strict Parity from "Rule Manager"
+         * Core DNA: Deep Navy, Slate, Cyan Accent, Monospace Labels
+         */
+        :root {
+            /* Palette - Dark Mode (Default) */
+            --bg-primary: #020617;
+            /* Deepest Navy */
+            --bg-panel: #0f172a;
+            /* Panel Navy */
+            --bg-input: #1e293b;
+            /* Slate Blue Input */
+            --text-main: #f8fafc;
+            /* White-ish */
+            --text-muted: #94a3b8;
+            /* Muted Slate */
+            --accent-color: #06b6d4;
+            /* Neon Cyan */
+            --accent-hover: #0891b2;
+            --border-color: #334155;
+            /* Subtle Border */
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --input-height: 42px;
+            --radius-md: 6px;
         }
 
-        @font-face {
-            font-family: 'Assistant';
-            src: url("{{ url_for('static', filename='fonts/Assistant-Bold.ttf') }}") format('truetype');
-            font-weight: 700;
+        /* Light Mode Variables - Exact Mapping */
+        body.light-mode {
+            --bg-primary: #f1f5f9;
+            --bg-panel: #ffffff;
+            --bg-input: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Assistant', sans-serif !important;
-            background-color: var(--color-slate-950);
-            color: var(--color-slate-100);
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, sans-serif;
             margin: 0;
+            padding: 40px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Layout Grid --- */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* --- Header --- */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(6, 182, 212, 0.15);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            transition: background-color 0.3s, color 0.3s;
+            margin-right: 1.5rem;
+            color: var(--accent-color);
         }
 
-        .spinner {
-            border-top-color: transparent !important;
-            animation: rot 1s linear infinite;
+        .header-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
         }
 
-        @keyframes rot {
-            from {
-                transform: rotate(0deg);
-            }
+        .header-info h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 4px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
+        .header-info p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-family: monospace;
+        }
+
+        /* --- Main Panel (Card) --- */
+        .config-panel {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Identity Row (Top Section) --- */
+        .identity-row {
+            padding: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: end;
+        }
+
+        /* --- Details Grid (Bottom Section) --- */
+        .details-engine {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            padding: 2rem;
+            gap: 2rem;
+        }
+
+        /* --- Inputs Typography & Spacing --- */
+        .input-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        /* Remove margin from last child to maintain vertical balance */
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Fix for Grid Alignment: Override margin for identity row items */
+        .identity-row .input-group {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-family: monospace;
+            /* Technical Vibe */
+        }
+
+        /* Unified Input Styling */
+        input,
+        textarea,
+        .custom-select {
+            width: 100%;
+            height: var(--input-height);
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            padding: 0 1rem;
+            font-family: system-ui, monospace;
+            font-size: 0.95rem;
+            appearance: none;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        textarea {
+            height: auto;
+            min-height: 100px;
+            padding: 0.75rem 1rem;
+            resize: vertical;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 1px var(--accent-color);
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+
+        /* --- Custom Dropdowns (Visual Parity with Inputs) --- */
+        select.hidden-native,
+        select.custom-enabled {
+            display: none;
+        }
+
+        .custom-select {
+            padding: 0;
+            /* Clear padding for inner layout */
+            position: relative;
+            user-select: none;
+            cursor: pointer;
+        }
+
+        .select-trigger {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .custom-select:hover {
+            border-color: var(--text-muted);
+        }
+
+        .custom-select.open {
+            border-color: var(--accent-color);
+        }
+
+        .select-trigger span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .select-arrow {
+            width: 12px;
+            height: 12px;
+            margin-left: 10px;
+            fill: var(--accent-color);
+            opacity: 0.8;
+            transition: transform 0.2s;
+        }
+
+        .custom-select.open .select-arrow {
+            transform: rotate(180deg);
+        }
+
+        .select-options {
+            position: absolute;
+            top: 105%;
+            left: 0;
+            right: 0;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            z-index: 100;
+            max-height: 250px;
+            overflow-y: auto;
+            display: none;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(6, 182, 212, 0.15);
+        }
+
+        .custom-select.open .select-options {
+            display: block;
+        }
+
+        .select-option {
+            padding: 10px 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            /* Subtle separator */
+            font-size: 0.9rem;
+        }
+
+        .light-mode .select-option {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .select-option:hover {
+            background-color: rgba(6, 182, 212, 0.1);
+            color: var(--accent-color);
+        }
+
+        .select-option.selected {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        /* --- Footer --- */
+        .footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--border-color);
+            background-color: rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .light-mode .footer {
+            background-color: var(--bg-input);
+            border-top-color: var(--border-color);
+        }
+
+        .btn-submit {
+            background-color: var(--accent-color);
+            color: #0b1120;
+            border: none;
+            height: var(--input-height);
+            padding: 0 2rem;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-submit svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        /* --- Utilities --- */
+        .hidden {
+            display: none !important;
+        }
+
+        .span-full {
+            grid-column: 1 / -1;
+        }
+
+        /* Flex row for side-by-side inputs (Protocol + Port) */
+        .flex-row {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .flex-1 {
+            flex: 1;
+        }
+
+        /* Spinner */
+        #loader {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: monospace;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .spin-circle {
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
             to {
                 transform: rotate(360deg);
             }
         }
-
-        .choices__inner {
-            border-radius: 0.75rem !important;
-            background-color: var(--color-slate-800) !important;
-            border: 1px solid var(--color-slate-700) !important;
-            padding: 8px !important;
-            color: var(--color-slate-100) !important;
-            min-height: 50px;
-            text-align: left;
-        }
-
-        .choices__list--dropdown {
-            background-color: var(--color-slate-800) !important;
-            border: 1px solid var(--color-slate-700) !important;
-            color: var(--color-slate-100) !important;
-        }
-
-        .choices__item--selectable.is-highlighted {
-            background-color: var(--color-indigo-500) !important;
-        }
-
-        .choices__input {
-            color: var(--color-slate-100) !important;
-            background-color: transparent !important;
-        }
-
-        /* Theme override for glass card handled in theme.css or here via vars if possible */
-        .glass-card {
-            background-color: var(--color-slate-900);
-            /* Fallback/Base */
-            background: linear-gradient(145deg, var(--color-slate-900), var(--color-slate-800));
-            border: 1px solid var(--color-slate-700);
-            backdrop-filter: blur(16px);
-        }
-
-        .input-focus:focus {
-            border-color: var(--color-indigo-500) !important;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
-
-        .status-animate {
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* General Input Styles using Vars */
-        input,
-        select {
-            background-color: var(--color-slate-900) !important;
-            color: var(--color-slate-100) !important;
-            border-color: var(--color-slate-700) !important;
-        }
     </style>
 </head>
 
-<body class="p-6">
-    <div class="max-w-2xl w-full glass-card rounded-3xl p-8 shadow-2xl transition-all">
+<body>
 
-        <div class="flex items-center justify-between mb-8 border-b border-slate-700/50 pb-6">
-            <h2 class="text-2xl font-bold text-indigo-400 flex items-center gap-3">
-                <span class="bg-indigo-500/10 p-2 rounded-lg">📦</span> Create Infrastructure Object
-            </h2>
-            <div id="loading-indicator"
-                class="hidden flex items-center gap-2 bg-slate-900/80 px-4 py-2 rounded-full border border-indigo-500/30">
-                <div class="spinner w-3.5 h-3.5 border-2 border-indigo-400 rounded-full"></div>
-                <span class="text-xs font-medium text-slate-300">Loading data...</span>
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="header-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                </svg>
             </div>
-        </div>
+            <div class="header-info">
+                <h1>Create Object</h1>
+                <p>Define Network & Service Objects</p>
+            </div>
+            <div id="loader" class="hidden" style="margin-left: auto;">
+                <div class="spin-circle"></div> CONNECTING...
+            </div>
+        </header>
 
-        <div id="object-form" class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-sm font-bold text-slate-400 mb-2">Object Type</label>
-                    <select id="type" onchange="updateUI()"
-                        class="w-full border border-slate-700 p-3 rounded-xl bg-slate-900 text-slate-200 outline-none">
-                        <option value="address">Address (IP Host)</option>
+        <!-- Main Config Panel -->
+        <div class="config-panel">
+
+            <!-- Identity Section -->
+            <div class="identity-row">
+                <div class="input-group">
+                    <label>Object Type</label>
+                    <select id="obj_type" class="custom-enabled" onchange="updateUI()">
+                        <option value="address">Address Object</option>
                         <option value="address-group">Address Group</option>
-                        <option value="service">Service (Port/Protocol)</option>
+                        <option value="service">Service Object</option>
                         <option value="service-group">Service Group</option>
                     </select>
                 </div>
-                <div>
-                    <label class="block text-sm font-bold text-slate-400 mb-2">Object Name</label>
-                    <input type="text" id="name" placeholder="e.g. SRV_PROD_WEB"
-                        class="w-full border border-slate-700 p-3 rounded-xl bg-slate-900 text-slate-200 outline-none input-focus">
+                <div class="input-group">
+                    <label>Name</label>
+                    <input type="text" id="obj_name" placeholder="E.g. SRV-WEB-01" autocomplete="off">
                 </div>
             </div>
 
-            <div id="single-value-container" class="space-y-2">
-                <label id="value-label" class="block text-sm font-bold text-slate-400">Value (IP / Port)</label>
-                <div class="flex gap-3">
-                    <input type="text" id="value" oninput="updateServiceName()"
-                        class="flex-1 border border-slate-700 p-3 rounded-xl bg-slate-900 text-slate-200 outline-none input-focus">
+            <!-- Details Section -->
+            <div class="details-engine">
 
-                    <select id="prefix_container"
-                        class="w-28 border border-slate-700 p-3 rounded-xl bg-slate-900 text-slate-200 outline-none">
-                        <option value="32">/32 (Host)</option>
-                        <option value="24">/24</option>
-                        <option value="16">/16</option>
-                        <option value="8">/8</option>
-                        <option value="0">None</option>
+                <!-- Dynamic Input: Subtype / Protocol -->
+                <div class="input-group" id="subtype_group">
+                    <label id="subtype_label">Type / Subtype</label>
+
+                    <!-- Address Subtypes -->
+                    <select id="addr_type" class="custom-enabled">
+                        <option value="ip-netmask">IP / Netmask (CIDR)</option>
+                        <option value="ip-range">IP Range</option>
+                        <option value="fqdn">FQDN (Domain)</option>
                     </select>
 
-                    <select id="protocol_container" onchange="updateServiceName()"
-                        class="w-32 border border-slate-700 p-3 rounded-xl bg-slate-900 text-slate-200 outline-none hidden">
+                    <!-- Service Protocol (Hidden by default) -->
+                    <select id="svc_proto" class="custom-enabled hidden-native">
                         <option value="tcp">TCP</option>
                         <option value="udp">UDP</option>
+                        <option value="sctp">SCTP</option>
+                    </select>
+                </div>
+
+                <!-- Dynamic Input: Value / Members -->
+                <div class="input-group" id="value_group_container">
+                    <label id="value_label">Value</label>
+
+                    <!-- Single Value Input -->
+                    <input type="text" id="obj_value" placeholder="192.168.1.5/32" autocomplete="off">
+
+                    <!-- Members Input (for Groups) -->
+                    <textarea id="obj_members" class="hidden"
+                        placeholder="Enter members, separated by commas...&#10;Ex: Web-Srv-01, DB-Srv-02"></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label>Description</label>
+                    <input type="text" id="obj_desc" placeholder="Optional description..." autocomplete="off">
+                </div>
+
+                <div class="input-group">
+                    <label>Tag</label>
+                    <select id="tag" class="custom-enabled">
+                        <option value="None">None</option>
                     </select>
                 </div>
             </div>
 
-            <div id="multi-select-container" class="hidden space-y-2">
-                <label id="multi-label" class="block text-sm font-bold text-slate-400">Select Members from
-                    System</label>
-                <select id="members_select" class="w-full" multiple></select>
+            <!-- Footer Section -->
+            <div class="footer">
+                <div id="status-msg" style="margin-right: 1.5rem; font-weight: 700; color: var(--accent-color);"
+                    class="hidden"></div>
+                <button id="submit-btn" class="btn-submit" onclick="submitObject()">
+                    CREATE OBJECT
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                    </svg>
+                </button>
             </div>
         </div>
-
-        <button onclick="createObj()" id="btn"
-            class="w-full mt-10 bg-indigo-600 text-white font-bold py-4 rounded-2xl hover:bg-indigo-500 transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2">
-            <span>🚀</span> Submit Creation Request
-        </button>
-
-        <div id="status" class="mt-6 p-4 rounded-xl hidden text-center font-bold border status-animate"></div>
     </div>
 
     <script>
-        let multiSelect;
+        /* --- Pure JS Custom Dropdowns (Matches Rule Manager Logic) --- */
+        function initCustomDropdowns() {
+            document.querySelectorAll('select.custom-enabled').forEach(native => {
+                // Cleanup existing for re-runs
+                if (native.nextElementSibling && native.nextElementSibling.classList.contains('custom-select')) native.nextElementSibling.remove();
 
-        // פונקציות ולידציה משופרות
-        const isValidIPv4 = (ip) => /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip);
-        const isValidHostname = (host) => /^[a-zA-Z0-9][-a-zA-Z0-9.]+[a-zA-Z0-9]$/.test(host);
-        const isValidPortRange = (port) => /^(\d{1,5})(-\d{1,5})?(,\d{1,5}(-\d{1,5})?)*$/.test(port.replace(/\s/g, ''));
+                // Logic to respect 'hidden-native' class or inline style
+                if ((native.style.display === 'none' && !native.classList.contains('hidden-native')) || native.classList.contains('processed')) return;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const element = document.getElementById('members_select');
-            multiSelect = new Choices(element, {
-                removeItemButton: true,
-                placeholderValue: 'Search existing object...',
-                noChoicesText: 'No data found',
-                itemSelectText: 'Select',
-                searchEnabled: true,
-                shouldSort: false
+                const wrapper = document.createElement('div'); wrapper.className = 'custom-select';
+                // Copy hidden state if native is hidden
+                if (native.classList.contains('hidden')) wrapper.classList.add('hidden');
+
+                const trigger = document.createElement('div'); trigger.className = 'select-trigger';
+                const label = native.options[native.selectedIndex]?.text || "Select...";
+                trigger.innerHTML = `<span>${label}</span><svg class="select-arrow" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>`;
+
+                const options = document.createElement('div'); options.className = 'select-options';
+                Array.from(native.options).forEach(opt => {
+                    if (opt.disabled) return;
+                    const item = document.createElement('div'); item.className = 'select-option';
+                    item.textContent = opt.text; item.dataset.value = opt.value;
+                    if (opt.selected) item.classList.add('selected');
+                    item.onclick = (e) => {
+                        e.stopPropagation();
+                        native.value = opt.value;
+                        native.dispatchEvent(new Event('change'));
+                        trigger.querySelector('span').textContent = opt.text;
+                        wrapper.classList.remove('open');
+                        options.querySelectorAll('.select-option').forEach(el => el.classList.remove('selected'));
+                        item.classList.add('selected');
+                    };
+                    options.appendChild(item);
+                });
+
+                trigger.onclick = (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('.custom-select').forEach(c => { if (c !== wrapper) c.classList.remove('open'); });
+                    wrapper.classList.toggle('open');
+                };
+
+                wrapper.appendChild(trigger); wrapper.appendChild(options);
+                native.parentNode.insertBefore(wrapper, native.nextSibling);
+
+                native.style.display = 'none';
+                native.classList.add('processed');
+
+                // Listen for sync changes
+                native.addEventListener('change', () => {
+                    const newLabel = native.options[native.selectedIndex]?.text;
+                    if (newLabel) trigger.querySelector('span').textContent = newLabel;
+                });
+
+                // Sync Visibility: If we toggle native 'hidden', we must toggle wrapper 'hidden'
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach(m => {
+                        if (m.type === 'attributes' && (m.attributeName === 'class' || m.attributeName === 'style')) {
+                            if (native.classList.contains('hidden')) wrapper.classList.add('hidden');
+                            else wrapper.classList.remove('hidden');
+                        }
+                    });
+                });
+                observer.observe(native, { attributes: true });
             });
+        }
 
-            // Add Name Input Listener for manual typing (Address/Groups)
-            document.getElementById('name').addEventListener('input', (e) => {
-                checkNameAvailability(e.target.value);
+        /* --- Global Click Handler for Dropdowns --- */
+        let globalClickHandlerAdded = false;
+        function setupGlobalClickHandler() {
+            if (globalClickHandlerAdded) return;
+            globalClickHandlerAdded = true;
+
+            document.addEventListener('click', (e) => {
+                // Close all dropdowns unless clicking inside a custom-select
+                const clickedInsideDropdown = e.target.closest('.custom-select');
+                if (!clickedInsideDropdown) {
+                    document.querySelectorAll('.custom-select.open').forEach(dropdown => {
+                        dropdown.classList.remove('open');
+                    });
+                }
             });
+        }
 
-            updateUI();
+        /* --- Theme Sync Logic --- */
+        function syncTheme() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'light') document.body.classList.add('light-mode');
+            else document.body.classList.remove('light-mode');
+        }
+        window.addEventListener('storage', syncTheme);
+        window.addEventListener('message', (event) => {
+            if (event.data === 'theme-toggle' || event.data.type === 'theme-toggle') document.body.classList.toggle('light-mode');
+            else if (event.data.type === 'set-theme') {
+                if (event.data.theme === 'light') document.body.classList.add('light-mode');
+                else document.body.classList.remove('light-mode');
+            }
         });
+        syncTheme();
 
-        async function updateUI() {
-            const type = document.getElementById('type').value;
-            const isGroup = type.includes('group');
-            const valueLabel = document.getElementById('value-label');
+        /* --- Init & Data Fetching --- */
+        window.onload = function () {
+            setupGlobalClickHandler();
+            initCustomDropdowns();
+            fetchTags();
+            updateUI(); // Set initial state
+        };
 
-            document.getElementById('single-value-container').classList.toggle('hidden', isGroup);
-            document.getElementById('multi-select-container').classList.toggle('hidden', !isGroup);
+        async function fetchTags() {
+            try {
+                const res = await fetch('/get-params');
+                const data = await res.json();
+                if (data.status === 'success' && data.tags) {
+                    const tagSelect = document.getElementById('tag');
+                    data.tags.forEach(t => tagSelect.add(new Option(t, t)));
+                    // Refresh custom dropdown options
+                    document.querySelectorAll('select.custom-enabled').forEach(el => el.classList.remove('processed'));
+                    document.querySelectorAll('.custom-select').forEach(el => el.remove());
+                    document.querySelectorAll('select.custom-enabled').forEach(el => el.style.display = ''); // Reset display to allow init
+                    initCustomDropdowns();
+                }
+            } catch (e) { }
+        }
 
-            document.getElementById('prefix_container').classList.toggle('hidden', type !== 'address');
-            document.getElementById('protocol_container').classList.toggle('hidden', type !== 'service');
+        /* --- UI Logic for Type Switching --- */
+        function updateUI() {
+            const type = document.getElementById('obj_type').value;
+            const subtypeLabel = document.getElementById('subtype_label');
+            const valueLabel = document.getElementById('value_label');
+
+            const subtypeGroup = document.getElementById('subtype_group');
+            const valueGroupContainer = document.getElementById('value_group_container');
+
+            const addrType = document.getElementById('addr_type');
+            const svcProto = document.getElementById('svc_proto');
+            const valueInput = document.getElementById('obj_value');
+            const membersInput = document.getElementById('obj_members');
+
+            // Reset visibilities & layout
+            addrType.classList.add('hidden');
+            svcProto.classList.add('hidden');
+            valueInput.classList.add('hidden');
+            membersInput.classList.add('hidden');
+
+            // Default Layout: reset to split columns
+            subtypeGroup.classList.remove('hidden');
+            valueGroupContainer.classList.remove('span-full');
 
             if (type === 'address') {
-                valueLabel.innerText = "IP Address or Hostname";
-                document.getElementById('name').readOnly = false;
-                document.getElementById('name').placeholder = "e.g. web-server-01";
-                document.getElementById('name').classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-            if (type === 'service') {
-                valueLabel.innerText = "Ports (e.g. 80,443)";
-                updateServiceName(); // Auto-generates immediately
-            }
+                subtypeLabel.textContent = "TYPE / SUBTYPE";
+                addrType.classList.remove('hidden');
 
-            if (isGroup) {
-                const endpoint = type === 'address-group' ? '/get-address-objects' : '/get-service-objects';
-                const key = type === 'address-group' ? 'addresses' : 'services';
-                loadChoices(endpoint, key);
-                document.getElementById('name').readOnly = false;
-                document.getElementById('name').classList.remove('opacity-50', 'cursor-not-allowed');
+                valueLabel.textContent = "IP / FQDN VALUE";
+                valueInput.classList.remove('hidden');
+                valueInput.placeholder = "192.168.1.5/32";
+            }
+            else if (type === 'service') {
+                subtypeLabel.textContent = "PROTOCOL";
+                svcProto.classList.remove('hidden');
+
+                valueLabel.textContent = "DESTINATION PORT";
+                valueInput.classList.remove('hidden');
+                valueInput.placeholder = "80, 443, 8080-8090";
+            }
+            else if (type.includes('group')) {
+                // Group Mode: Hide Subtype column, expand Value column to full width
+                subtypeGroup.classList.add('hidden');
+                valueGroupContainer.classList.add('span-full');
+
+                valueLabel.textContent = "GROUP MEMBERS";
+                membersInput.classList.remove('hidden');
             }
         }
 
-        function updateServiceName() {
-            const type = document.getElementById('type').value;
-            if (type !== 'service') return;
+        /* --- Form Submission (Logic) --- */
+        async function submitObject() {
+            const btn = document.getElementById('submit-btn');
+            const status = document.getElementById('status-msg');
+            const type = document.getElementById('obj_type').value;
 
-            const nameInput = document.getElementById('name');
-            const proto = document.getElementById('protocol_container').value.toUpperCase();
-            const val = document.getElementById('value').value.trim().replace(/\s/g, '');
+            const data = {
+                type: type,
+                name: document.getElementById('obj_name').value,
+                description: document.getElementById('obj_desc').value,
+                tag: document.getElementById('tag').value,
+            };
 
-            if (val) {
-                nameInput.value = `${proto}_${val}`;
-                nameInput.readOnly = true;
-                nameInput.classList.add('opacity-50', 'cursor-not-allowed');
-                nameInput.placeholder = "Auto-generated...";
-            } else {
-                nameInput.value = "";
-                nameInput.placeholder = "Enter Port to generate name...";
+            // Dynamic Data Collection
+            if (type === 'address') {
+                data.value = document.getElementById('obj_value').value;
+                data.subtype = document.getElementById('addr_type').value;
+            } else if (type === 'service') {
+                data.value = document.getElementById('obj_value').value; // Ports
+                data.protocol = document.getElementById('svc_proto').value;
+            } else if (type.includes('group')) {
+                // Parse members from CSV
+                const membersRaw = document.getElementById('obj_members').value;
+                // Convert to comma-sep string for backend if it expects that, or array?
+                // Rule Manager backend usually takes string values or arrays? 
+                // Creating a Request -> usually 'value' field string.
+                data.value = membersRaw.split(/[\n,]+/).map(s => s.trim()).filter(s => s).join(',');
             }
-            checkNameAvailability(nameInput.value);
-        }
 
-        let debounceTimer;
-        async function checkNameAvailability(name) {
-            const status = document.getElementById('status');
-            const btn = document.getElementById('btn');
-
-            if (!name || name.trim() === '') {
-                // Clear specific name error if empty (or let other validation handle it)
+            // Validation
+            if (!data.name || !data.value) {
+                alert("Please fill Name and Value/Members");
                 return;
             }
 
-            // Debounce
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(async () => {
-                try {
-                    const res = await fetch('/check-object-name', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name: name })
-                    });
-                    const data = await res.json();
-
-                    if (data.exists) {
-                        status.innerText = `Error: Object '${name}' already exists (${data.type})`;
-                        status.classList.remove('hidden');
-                        status.className = "mt-6 p-4 rounded-xl text-center font-bold border status-animate bg-rose-500/10 text-rose-400 border-rose-500/30";
-                        btn.disabled = true;
-                        btn.classList.add('opacity-50', 'cursor-not-allowed');
-                    } else {
-                        // Clear error only if it's currently showing a "exists" error
-                        if (status.innerText.includes("already exists")) {
-                            status.classList.add('hidden');
-                            btn.disabled = false;
-                            btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                        }
-                    }
-                } catch (e) {
-                    console.error("Check name error", e);
-                }
-            }, 500); // 500ms delay
-        }
-
-        async function loadChoices(url, dataKey) {
-            const loader = document.getElementById('loading-indicator');
-            loader.classList.remove('hidden');
-            try {
-                const res = await fetch(url);
-                const data = await res.json();
-                if (data.status === 'success') {
-                    const items = data[dataKey].map(name => ({ value: name, label: name }));
-                    multiSelect.clearChoices();
-                    multiSelect.setChoices(items, 'value', 'label', true);
-                }
-            } catch (e) { console.error("Load Error", e); }
-            finally { loader.classList.add('hidden'); }
-        }
-
-        /**
-         * תיקון: ריקון יסודי של השדות לאחר הצלחה
-         */
-        function resetForm() {
-            document.getElementById('name').value = '';
-            document.getElementById('value').value = '';
-            if (multiSelect) {
-                multiSelect.removeActiveItems(); // ניקוי בחירות Choices.js
-            }
-        }
-
-        function showStatus(msg, isSuccess) {
-            const status = document.getElementById('status');
-            status.innerText = msg;
+            status.textContent = "CREATING...";
             status.classList.remove('hidden');
-            status.className = `mt-6 p-4 rounded-xl text-center font-bold border status-animate ${isSuccess ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                }`;
-            if (isSuccess) setTimeout(() => status.classList.add('hidden'), 5000);
-        }
-
-        async function createObj() {
-            const btn = document.getElementById('btn');
-            const type = document.getElementById('type').value;
-            const name = document.getElementById('name').value.trim();
-            let value;
-
-            if (!name) return showStatus("Object name is required", false);
-
-            if (type.includes('group')) {
-                const selected = multiSelect.getValue(true);
-                if (selected.length === 0) return showStatus("Group cannot be empty", false);
-                value = selected.join(',');
-            } else {
-                value = document.getElementById('value').value.trim();
-                if (!value) return showStatus("Value is required", false);
-
-                // Validation compatible with Backend
-                if (type === 'address') {
-                    if (!isValidIPv4(value) && !isValidHostname(value)) {
-                        return showStatus("Invalid IP address or Hostname", false);
-                    }
-                }
-                if (type === 'service' && !isValidPortRange(value)) {
-                    return showStatus("Invalid port format", false);
-                }
-            }
-
-            const payload = {
-                type, name, value,
-                prefix: type === 'address' ? document.getElementById('prefix_container').value : null,
-                protocol: type === 'service' ? document.getElementById('protocol_container').value : null
-            };
-
+            status.style.color = 'var(--text-muted)';
             btn.disabled = true;
-            btn.innerHTML = "Processing request...";
 
             try {
                 const res = await fetch('/create-object', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
                 });
-                const data = await res.json();
+                const r = await res.json();
 
-                if (data.status === 'success') {
-                    showStatus(data.message, true);
-                    resetForm();
+                status.textContent = r.message.toUpperCase();
+                status.style.color = (r.status === 'success') ? 'var(--success-color)' : 'var(--danger-color)';
+
+                if (r.status === 'success') {
+                    setTimeout(() => location.reload(), 2000);
                 } else {
-                    showStatus(data.message || "Server error", false);
+                    btn.disabled = false;
                 }
             } catch (e) {
-                showStatus("Communication error", false);
-            } finally {
+                status.textContent = "COMMUNICATION ERROR: " + e;
+                status.style.color = 'var(--danger-color)';
                 btn.disabled = false;
-                btn.innerHTML = "🚀 Submit Creation Request";
             }
         }
     </script>

@@ -1,4 +1,5 @@
 import re
+import logging
 from typing import Dict, Any, Optional, List, Union
 from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
@@ -110,155 +111,161 @@ class FwService(BaseService):
         return {db_obj.name}
 
     @classmethod
+    def resolve_service_to_ports(cls, obj_name: str, depth: int = 0) -> set:
+        """
+        Recursively resolves Service Objects to a Set of (Protocol, StartPort, EndPort) tuples.
+        Returns 'UNIVERSAL' string if it covers everything (any/application-default).
+        """
+        if depth > 10: return set()
+        if not obj_name: return {'UNIVERSAL'}
+        
+        lower_name = obj_name.lower()
+        if lower_name in ('any', 'application-default'): return {'UNIVERSAL'}
+
+        # DB Lookup
+        svc = ServiceObject.query.filter(func.lower(ServiceObject.name) == lower_name).first()
+        
+        if not svc:
+            # If not in DB, assume it's a raw port number (e.g. "8080") default TCP
+            # or try to parse "tcp/80" if that format is used? 
+            # For now, simplistic numeric handling:
+            if obj_name.isdigit():
+                p = int(obj_name)
+                return {('tcp', p, p), ('udp', p, p)} # ambiguous, matching both? Or default TCP? Defaulting to TCP usually safe.
+            return set()
+
+        if svc.is_group:
+            combined = set()
+            for m in svc.members:
+                res = cls.resolve_service_to_ports(m.name, depth + 1)
+                if 'UNIVERSAL' in res: return {'UNIVERSAL'}
+                combined.update(res)
+            return combined
+        
+        # Single Object
+        # Parse Port Range "80" or "80-90"
+        proto = svc.protocol.lower() if svc.protocol else 'tcp'
+        val = svc.port if svc.port else '0'
+        
+        # Determine strict range
+        start, end = 0, 65535
+        if '-' in val:
+            parts = val.split('-')
+            try: start, end = int(parts[0]), int(parts[1])
+            except: pass
+        elif val.isdigit():
+             try: start = end = int(val)
+             except: pass
+        
+        return {(proto, start, end)}
+
+    @classmethod
+    def is_service_subset(cls, sub_set: set, super_set: set) -> bool:
+        """
+        Checks if sub_set is visually 'covered' by super_set.
+        Handles 'UNIVERSAL' logic.
+        """
+        if 'UNIVERSAL' in super_set: return True
+        if 'UNIVERSAL' in sub_set: return False # Specific cannot cover Any
+        
+        if not sub_set: return True # Empty request is trivially covered? Or error? Assuming True.
+
+        # For every range in Sub, must be fully covered by SOME range in Super with same Proto
+        for (p_sub, s_sub, e_sub) in sub_set:
+            covered = False
+            for (p_sup, s_sup, e_sup) in super_set:
+                if p_sub == p_sup and s_sup <= s_sub and e_sup >= e_sub:
+                    covered = True
+                    break
+            if not covered: return False
+        
+        return True
+
+    @classmethod
     def check_shadow_rule(cls, source: str, dest: str, from_zone: str, to_zone: str, service_port: str = 'any', application: str = 'any') -> Dict[str, Any]:
         """
-        Advanced Policy Match Engine.
-        Returns passing rule if traffic is already allowed.
+        Advanced Set-Theory Shadow Detection Engine.
+        Returns shadowed rule details if the REQUEST is a SUBSET of an EXISTING RULE.
         """
-        # 1. IP Based Matching
-        src_set = cls.flatten_address(source)
-        dst_set = cls.flatten_address(dest)
+        # 1. Normalize Request
+        # Address: IPSet
+        req_src_set = cls.flatten_address(source)
+        req_dst_set = cls.flatten_address(dest)
         
-        # 2. Name Based Matching (Fallback for FQDNs/Groups without IPs)
-        src_names = cls.resolve_group_members(source)
-        dst_names = cls.resolve_group_members(dest)
+        # Service: Set<(proto, start, end)>
+        req_svc_set = cls.resolve_service_to_ports(service_port)
+        
+        # App: Set<str>
+        req_app = (application.lower() or 'any')
+        req_app_set = {req_app}
 
         query = DBSecurityRule.query.filter_by(disabled=False)
+        # Zone Filter (Exact or Any)
         if from_zone and from_zone != 'any':
-            query = query.filter(DBSecurityRule.from_zone.in_([from_zone, 'any']))
+             query = query.filter(DBSecurityRule.from_zone.in_([from_zone, 'any']))
         if to_zone and to_zone != 'any':
-            query = query.filter(DBSecurityRule.to_zone.in_([to_zone, 'any']))
+             query = query.filter(DBSecurityRule.to_zone.in_([to_zone, 'any']))
 
         for rule in query.all():
-            # Source Check
-            ip_match_src = False
-            name_match_src = False
-
+            # Action Check: Only concerned if Action is ALLOW (User wants to know if they perform duplicated work)
+            # Or DENY (User wants to know if they are blocked).
+            # Returning ANY match that covers the traffic.
+            
+            # --- Source Check ---
+            rule_src_set = IPSet()
             if not rule.sources: # Any
-                ip_match_src = True
-                name_match_src = True
+                pass # Implicitly Universal, handled by logic: if empty, assume ANY (0.0.0.0/0)
+                rule_src_set.add('0.0.0.0/0')
             else:
-                # IP Check
-                if src_set:
-                     r_src_ip = IPSet()
-                     for s in rule.sources: r_src_ip.update(cls.flatten_address(s.name))
-                     if src_set.issubset(r_src_ip): ip_match_src = True
-
-                # Name Check (If IP check failed or empty)
-                if not ip_match_src:
-                     r_src_names = set()
-                     for s in rule.sources: r_src_names.update(cls.resolve_group_members(s.name))
-                     
-                     # Check if Input members are subset of Rule members
-                     # e.g. Input={Host-A}, Rule={Group-X (contains Host-A)} -> Subset True
-                     if src_names and src_names.issubset(r_src_names): 
-                        name_match_src = True
+                for s in rule.sources: rule_src_set.update(cls.flatten_address(s.name))
             
-            if not ip_match_src and not name_match_src: continue
+            # If request source is NOT a subset of rule source, split.
+            if not req_src_set.issubset(rule_src_set): continue
 
-            # Dest Check
-            ip_match_dst = False
-            name_match_dst = False
-
-            if not rule.destinations: # Any
-                ip_match_dst = True
-                name_match_dst = True
+            # --- Destination Check ---
+            rule_dst_set = IPSet()
+            if not rule.destinations:
+                rule_dst_set.add('0.0.0.0/0')
             else:
-                 # IP Check
-                 if dst_set:
-                     r_dst_ip = IPSet()
-                     for d in rule.destinations: r_dst_ip.update(cls.flatten_address(d.name))
-                     if dst_set.issubset(r_dst_ip): ip_match_dst = True
-                 
-                 # Name Check
-                 if not ip_match_dst:
-                     r_dst_names = set()
-                     for d in rule.destinations: r_dst_names.update(cls.resolve_group_members(d.name))
-                     if dst_names and dst_names.issubset(r_dst_names):
-                        name_match_dst = True
+                 for d in rule.destinations: rule_dst_set.update(cls.flatten_address(d.name))
             
-            if not ip_match_dst and not name_match_dst: continue
+            if not req_dst_set.issubset(rule_dst_set): continue
 
             # --- Application Check ---
-            # If the RULE implies 'any' application (empty or explicit 'any'), it covers everything.
-            # If the REQUEST is 'any', it is only covered if the RULE is 'any'.
-            
-            rule_apps = [a.name.lower() for a in rule.applications]
-            rule_has_any_app = not rule_apps or 'any' in rule_apps
-            
-            req_app = (application or 'any').lower()
-
-            # If rule is specific, but request is 'any', rule DOES NOT cover the request (only partially).
-            # We are looking for "Is the request FULLY shadowed by this rule?"
-            if not rule_has_any_app:
-                 # Rule is specific (e.g. 'ssh'). Request is 'any' -> Not shadowed.
-                 if req_app == 'any': continue
-                 # Rule is specific (e.g. 'ssh'). Request is 'ssl' -> Not shadowed.
-                 if req_app not in rule_apps: continue
+            rule_apps = {a.name.lower() for a in rule.applications}
+            if not rule_apps or 'any' in rule_apps:
+                pass # Rule covers all apps
+            else:
+                if 'any' in req_app_set: continue # Request is wildcard, Rule is specific -> Not Covered
+                if not req_app_set.issubset(rule_apps): continue
 
             # --- Service Check ---
-            # If no services linked, treat as ANY/Application-Default
+            rule_svc_set = set()
             if not rule.services:
-                 return {"exists": True, "rule": rule.name, "action": rule.action}
-
-            rule_services = [s.name.lower() for s in rule.services]
-            if 'any' in rule_services or 'application-default' in rule_services:
-                return {"exists": True, "rule": rule.name, "action": rule.action}
+                rule_svc_set.add('UNIVERSAL')
+            else:
+                for s in rule.services:
+                    rule_svc_set.update(cls.resolve_service_to_ports(s.name))
             
-            input_svc = service_port.lower()
-            if input_svc in rule_services:
-                 return {"exists": True, "rule": rule.name, "action": rule.action}
+            svc_subset = cls.is_service_subset(req_svc_set, rule_svc_set)
+            
+            # DEBUG LOG START
+            if rule.name.lower() == 'exact-duplicate-candidate': # Trace specific rule or all?
+                 pass
+            logging.info(f"SHADOW TRACE: Rule={rule.name} | Action={rule.action} | Apps={rule_apps} vs Req={req_app_set} | SvcMatch={svc_subset}")
+            # DEBUG LOG END
 
-            # If we reached here, IP matched but Service/App didn't. Continue to next rule.
-            continue
+            if not svc_subset: continue
+
+            # If we are here, ALL conditions are Subsets. SHADOW DETECTED.
+            return {
+                "exists": True, 
+                "rule": rule.name, 
+                "action": rule.action,
+                "message": f"Shadowed by {rule.name}"
+            }
 
         return {"exists": False}
-
-    @classmethod
-    def detect_zone(cls, ip_input: str) -> Optional[str]:
-        """Maps IP to Zone using DB Topology."""
-        target = cls.flatten_address(ip_input)
-        if not target: return None
-
-        interfaces = NetworkInterface.query.all()
-        detected = set()
-
-        for cidr in target.iter_cidrs():
-            for iface in interfaces:
-                if not iface.subnet: continue
-                if cidr in IPNetwork(iface.subnet) or IPNetwork(iface.subnet) in cidr:
-                    detected.add(iface.zone_name)
-                    break 
-        
-        return list(detected)[0] if detected else None
-
-    @classmethod
-    def resolve_service_details(cls, service_name: str, default_proto: str = 'tcp') -> tuple[str, str]:
-        """Resolves a Service Object name to its (port, protocol). Fallback to defaults."""
-        if not service_name: return '443', default_proto
-        
-        # If already numeric, return as is with default proto
-        if service_name.isdigit(): return service_name, default_proto
-        
-        # Look up in DB
-        svc = ServiceObject.query.filter(func.lower(ServiceObject.name) == service_name.lower()).first()
-        if svc:
-            # If Group, resolve first member recursively
-            if svc.is_group:
-                if svc.members:
-                     # Recursive call for the first member
-                     return cls.resolve_service_details(svc.members[0].name, default_proto)
-                # Empty group? Fallback to name (or 443?)
-                return service_name, default_proto
-
-            # Prefer DB protocol if available, else default
-            proto = svc.protocol if svc.protocol else default_proto
-            
-            # Prefer DB port if valid, else object name
-            port = svc.port if (svc.port and svc.port.lower() != 'any') else service_name
-            return port, proto
-            
-        return service_name, default_proto # Fallback
 
     @classmethod
     def verify_policy_match(cls, source: str, dest: str, from_zone: str, to_zone: str, 

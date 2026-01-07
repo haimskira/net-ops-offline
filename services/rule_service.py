@@ -11,13 +11,23 @@ class RuleService(BaseService):
     
     @classmethod
     def create_request(cls, data: RuleCreateRequest, user: str):
-        # Check for duplicates
+        # 1. Backend Shadow Check (Safety Net)
+        # Ensure we catch shadows even if UI didn't blocking it
+        shadow = FwService.check_shadow_rule(
+             source=data.source_ip, dest=data.destination_ip, 
+             from_zone=data.from_zone, to_zone=data.to_zone,
+             service_port=data.service_port, application=data.application
+        )
+        if shadow['exists']:
+             raise ValueError(f"Operation Denied: Traffic is already allowed by firewall rule '{shadow['rule']}'")
+
+        # 2. Check for duplicate PENDING requests
         existing = RuleRequest.query.filter_by(
             source_ip=data.source_ip, destination_ip=data.destination_ip, 
             service_port=data.service_port, status='Pending'
         ).first()
         if existing:
-            raise ValueError(f"Duplicate request exists (ID: {existing.id})")
+            raise ValueError(f"You already have a PENDING request for this (Ref: {existing.rule_name})")
 
         with cls.transaction():
             req = RuleRequest(
