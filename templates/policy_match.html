@@ -1,65 +1,247 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Policy Match Tester</title>
 
     <style>
-        @font-face {
-            font-family: 'Assistant';
-            src: url("{{ url_for('static', filename='fonts/Assistant-Regular.ttf') }}") format('truetype');
-            font-weight: 400;
+        /* 
+         * Design System: "Rule Manager Pro" Inheritance
+         * Air-Gap Compatible: No External Dependencies
+         */
+        :root {
+            --bg-primary: #020617;
+            --bg-panel: #0f172a;
+            --bg-input: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-color: #06b6d4;
+            --accent-hover: #0891b2;
+            --border-color: #334155;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --input-height: 42px;
+            --radius-md: 6px;
         }
 
-        @font-face {
-            font-family: 'Assistant';
-            src: url("{{ url_for('static', filename='fonts/Assistant-Bold.ttf') }}") format('truetype');
-            font-weight: 700;
+        body.light-mode {
+            --bg-primary: #f1f5f9;
+            --bg-panel: #ffffff;
+            --bg-input: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Assistant', sans-serif !important;
-            background-color: var(--color-slate-950);
-            color: var(--color-slate-100);
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, sans-serif;
             margin: 0;
+            padding: 40px;
+            min-height: 100vh;
             transition: background-color 0.3s, color 0.3s;
         }
 
-        .spinner-custom {
-            border-top-color: transparent !important;
-            animation: rot 1s linear infinite;
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
         }
 
-        @keyframes rot {
-            0% {
-                transform: rotate(0deg);
-            }
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
 
-            100% {
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .header-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(6, 182, 212, 0.15);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1.5rem;
+            color: var(--accent-color);
+        }
+
+        .header-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        .header-info h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 4px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .header-info p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-family: monospace;
+        }
+
+        /* Loading Indicator */
+        .loading-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+
+        .light-mode .loading-indicator {
+            background: var(--bg-input);
+        }
+
+        .loader {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
                 transform: rotate(360deg);
             }
         }
 
+        .loading-text {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        /* Panel */
+        .config-panel {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            padding: 2rem;
+            gap: 2rem;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-family: monospace;
+        }
+
         input,
         select {
-            background-color: var(--color-slate-800) !important;
-            border: 1px solid var(--color-slate-700) !important;
-            color: var(--color-slate-100) !important;
-            transition: all 0.2s ease-in-out;
+            width: 100%;
+            height: var(--input-height);
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            padding: 0 1rem;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s;
         }
 
         input:focus,
         select:focus {
-            border-color: var(--color-indigo-500) !important;
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 1px var(--accent-color);
         }
 
-        .result-card {
-            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        input::placeholder {
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--border-color);
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+
+        .light-mode .footer {
+            background-color: var(--bg-input);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background-color: var(--accent-color);
+            color: #0b1120;
+            border: none;
+            height: calc(var(--input-height) + 8px);
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Result Box */
+        .result-box {
+            margin-top: 2rem;
+            padding: 2rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            animation: slideUp 0.4s ease;
         }
 
         @keyframes slideUp {
@@ -74,92 +256,171 @@
             }
         }
 
+        .result-box.success {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--success-color);
+        }
+
+        .result-box.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--danger-color);
+        }
+
+        .result-header {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0 0 1.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .result-header.success {
+            color: var(--success-color);
+        }
+
+        .result-header.error {
+            color: var(--danger-color);
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .result-item {
+            background-color: var(--bg-input);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .result-item-label {
+            display: block;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            font-family: monospace;
+        }
+
+        .result-item-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .result-item-value.accent {
+            color: var(--accent-color);
+        }
+
+        .result-item-value.success {
+            color: var(--success-color);
+        }
+
+        .result-item-value.danger {
+            color: var(--danger-color);
+        }
+
+        .no-match-message {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: var(--text-muted);
+            padding: 1rem;
+        }
+
         .hidden {
-            display: none;
+            display: none !important;
         }
-
-        .glass-panel-custom {
-            background-color: var(--color-slate-900);
-            border-color: var(--color-slate-700);
-            background: rgba(var(--color-slate-900-rgb), 0.4);
-            backdrop-filter: blur(10px);
-        }
-
-        /* Fallback for bg colors in js injected html, if any */
     </style>
 </head>
 
-<body class="p-6 overflow-x-hidden">
-    <!-- Updated container classes to use variables or generic classes -->
-    <div class="max-w-3xl mx-auto glass-panel-custom border rounded-3xl p-8 shadow-2xl backdrop-blur-md">
-
-        <div class="flex items-center justify-between mb-8 border-b border-slate-700 pb-5">
-            <div class="flex items-center gap-3">
-                <div class="bg-indigo-500/20 text-indigo-400 p-2 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.15)]">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-left">
+                <div class="header-icon">
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
                     </svg>
                 </div>
-                <h2 class="text-2xl font-bold text-indigo-100 tracking-tight">Security Policy Match Tester</h2>
+                <div class="header-info">
+                    <h1>Security Policy Match Tester</h1>
+                    <p>Traffic Simulation & Rule Diagnosis</p>
+                </div>
+            </div>
+            <div id="loading-indicator" class="loading-indicator">
+                <div class="loader"></div>
+                <span class="loading-text">Loading firewall data...</span>
+            </div>
+        </header>
+
+        <div class="config-panel">
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>From Zone</label>
+                    <select id="from_zone"></select>
+                </div>
+                <div class="input-group">
+                    <label>To Zone</label>
+                    <select id="to_zone"></select>
+                </div>
+                <div class="input-group">
+                    <label>Source IP</label>
+                    <input type="text" id="source_ip" placeholder="e.g. 10.0.0.1">
+                </div>
+                <div class="input-group">
+                    <label>Destination IP</label>
+                    <input type="text" id="destination_ip" placeholder="e.g. 8.8.8.8">
+                </div>
+                <div class="input-group">
+                    <label>Protocol</label>
+                    <select id="protocol">
+                        <option value="6">TCP (6)</option>
+                        <option value="17">UDP (17)</option>
+                        <option value="1">ICMP (1)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Destination Port</label>
+                    <input type="text" id="port" value="443">
+                </div>
             </div>
 
-            <div id="loading-indicator"
-                class="flex items-center gap-3 bg-slate-900/80 px-4 py-2 rounded-full border border-indigo-500/30">
-                <div class="spinner-custom w-4 h-4 border-2 border-indigo-400 rounded-full"></div>
-                <span class="text-xs font-medium text-slate-300">Loading firewall data...</span>
+            <div class="footer">
+                <button id="run-btn" class="btn-submit" onclick="runMatch()">
+                    RUN DIAGNOSTIC MATCH
+                </button>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-2">
-                <label class="block text-sm font-bold text-slate-400 mr-1">From Zone</label>
-                <select id="from_zone" class="w-full p-3 rounded-xl outline-none"></select>
-            </div>
-            <div class="space-y-2">
-                <label class="block text-sm font-bold text-slate-400 mr-1">To Zone</label>
-                <select id="to_zone" class="w-full p-3 rounded-xl outline-none"></select>
-            </div>
-            <div class="space-y-2">
-                <label class="block text-sm font-bold text-slate-400 mr-1">Source IP</label>
-                <input type="text" id="source_ip" placeholder="e.g. 10.0.0.1"
-                    class="w-full p-3 rounded-xl outline-none">
-            </div>
-            <div class="space-y-2">
-                <label class="block text-sm font-bold text-slate-400 mr-1">Destination IP</label>
-                <input type="text" id="destination_ip" placeholder="e.g. 8.8.8.8"
-                    class="w-full p-3 rounded-xl outline-none">
-            </div>
-            <div class="space-y-2">
-                <label class="block text-sm font-bold text-slate-400 mr-1">Protocol</label>
-                <select id="protocol" class="w-full p-3 rounded-xl outline-none">
-                    <option value="6">TCP (6)</option>
-                    <option value="17">UDP (17)</option>
-                    <option value="1">ICMP (1)</option>
-                </select>
-            </div>
-            <div class="space-y-2">
-                <label class="block text-sm font-bold text-slate-400 mr-1">Destination Port</label>
-                <input type="text" id="port" value="443" class="w-full p-3 rounded-xl outline-none">
-            </div>
-        </div>
-
-        <button id="run-btn" onclick="runMatch()"
-            class="w-full mt-10 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-900/20 transition-all transform active:scale-[0.97] flex items-center justify-center gap-2">
-            <span>Run Diagnostic Match</span>
-        </button>
-
-        <div id="result-box" class="mt-8 hidden p-6 rounded-2xl border transition-all result-card">
-            <h3 class="text-xl font-bold mb-4 flex items-center gap-2" id="res-header"></h3>
-            <div id="res-content" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-left"></div>
+        <div id="result-box" class="result-box hidden">
+            <h3 id="res-header" class="result-header"></h3>
+            <div id="res-content" class="result-grid"></div>
         </div>
     </div>
 
     <script>
-        /**
-         * JSDoc: טוען את האזורים ומוסיף אופציית "ללא אזור" לסימולציה גמישה.
-         */
+        // Theme sync
+        function syncTheme() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'light') document.body.classList.add('light-mode');
+            else document.body.classList.remove('light-mode');
+        }
+
+        window.addEventListener('storage', syncTheme);
+        window.addEventListener('message', (event) => {
+            if (event.data === 'theme-toggle' || event.data.type === 'theme-toggle') {
+                document.body.classList.toggle('light-mode');
+            }
+        });
+        syncTheme();
+
+        // Load zones
         async function loadZones() {
             const loader = document.getElementById('loading-indicator');
             try {
@@ -170,11 +431,9 @@
                     const fromEl = document.getElementById('from_zone');
                     const toEl = document.getElementById('to_zone');
 
-                    // איפוס והוספת אופציית ברירת מחדל ריקה (תשלח כ-"" לשרת)
                     fromEl.innerHTML = '<option value="">-- Without Zone (Optional) --</option>';
                     toEl.innerHTML = '<option value="">-- Without Zone (Optional) --</option>';
 
-                    // סינון any והוספת האזורים האמיתיים
                     data.zones
                         .filter(z => z.toLowerCase() !== 'any')
                         .forEach(z => {
@@ -189,19 +448,15 @@
             }
         }
 
-        /**
-         * JSDoc: מבצע את הרצת הדיאגנוסטיקה מול ה-Backend ומציג תוצאות.
-         * מטפל במניעת undefined על ידי שימוש ב-Payload המקורי כ-fallback.
-         */
+        // Run policy match
         async function runMatch() {
             const btn = document.getElementById('run-btn');
             const resultBox = document.getElementById('result-box');
             const header = document.getElementById('res-header');
             const content = document.getElementById('res-content');
 
-            // הכנת ה-UI
             btn.disabled = true;
-            btn.innerHTML = `<div class="spinner-custom w-5 h-5 border-2 border-white rounded-full"></div> Checking rule...`;
+            btn.innerHTML = '<div class="loader"></div> CHECKING RULE...';
             resultBox.classList.add('hidden');
 
             const payload = {
@@ -213,11 +468,10 @@
                 port: document.getElementById('port').value.trim()
             };
 
-            // ולידציה בסיסית
             if (!payload.source_ip || !payload.destination_ip) {
                 alert("Please enter valid IP addresses");
                 btn.disabled = false;
-                btn.innerText = "Run Diagnostic Match";
+                btn.textContent = "RUN DIAGNOSTIC MATCH";
                 return;
             }
 
@@ -232,54 +486,49 @@
 
                 if (!res.ok) throw new Error(data.message || "Execution error");
 
-                resultBox.classList.remove('hidden');
+                resultBox.classList.remove('hidden', 'success', 'error');
 
                 if (data.status === 'success' && data.match) {
-                    // עיצוב הצלחה (Match Found)
-                    // Use style classes that interact with vars if possible, but color overrides are fine
-                    resultBox.className = "mt-8 p-6 rounded-2xl border-emerald-500/30 bg-emerald-500/10 shadow-[0_0_30px_rgba(16,185,129,0.1)] block result-card";
-                    header.className = "text-xl font-bold mb-4 text-emerald-400";
-                    header.innerHTML = `<span>✅</span> Result: Match Found`;
+                    resultBox.classList.add('success');
+                    header.className = 'result-header success';
+                    header.innerHTML = '<span>✅</span> Result: Match Found';
 
-                    // מניעת undefined: שימוש בנתוני ה-Payload אם ה-Backend לא החזיר שדות אלו
                     const srcDisplay = data.source || payload.source_ip;
                     const dstDisplay = data.destination || payload.destination_ip;
                     const action = (data.action || "allow").toUpperCase();
 
                     content.innerHTML = `
-                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
-                        <strong class="text-slate-500 block text-xs uppercase mb-1">Rule Name</strong> 
-                        <span class="text-indigo-400 font-bold">${data.rule_name}</span>
-                    </div>
-                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
-                        <strong class="text-slate-500 block text-xs uppercase mb-1">Action</strong> 
-                        <span class="${action === 'ALLOW' ? 'text-emerald-400' : 'text-rose-400'} font-bold">${action}</span>
-                    </div>
-                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
-                        <strong class="text-slate-500 block text-xs uppercase mb-1">Source</strong> 
-                        <span class="text-slate-200">${srcDisplay}</span>
-                    </div>
-                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
-                        <strong class="text-slate-500 block text-xs uppercase mb-1">Destination</strong> 
-                        <span class="text-slate-200">${dstDisplay}</span>
-                    </div>
-                `;
+                        <div class="result-item">
+                            <span class="result-item-label">Rule Name</span>
+                            <span class="result-item-value accent">${data.rule_name}</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-item-label">Action</span>
+                            <span class="result-item-value ${action === 'ALLOW' ? 'success' : 'danger'}">${action}</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-item-label">Source</span>
+                            <span class="result-item-value">${srcDisplay}</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-item-label">Destination</span>
+                            <span class="result-item-value">${dstDisplay}</span>
+                        </div>
+                    `;
                 } else {
-                    // עיצוב חוסר התאמה (No Match)
-                    resultBox.className = "mt-8 p-6 rounded-2xl border-rose-500/30 bg-rose-500/10 shadow-[0_0_30px_rgba(244,63,94,0.1)] block result-card";
-                    header.className = "text-xl font-bold mb-4 text-rose-400 text-center";
-                    header.innerHTML = `<span>❌</span> No Match Found`;
-                    content.innerHTML = `<p class="col-span-2 text-slate-400 p-2 text-center">Traffic does not match any existing security rule. It will be blocked by Implicit Deny.</p>`;
+                    resultBox.classList.add('error');
+                    header.className = 'result-header error';
+                    header.innerHTML = '<span>❌</span> No Match Found';
+                    content.innerHTML = '<p class="no-match-message">Traffic does not match any existing security rule. It will be blocked by Implicit Deny.</p>';
                 }
             } catch (e) {
                 alert("Error: " + e.message);
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Run Diagnostic Match";
+                btn.textContent = "RUN DIAGNOSTIC MATCH";
             }
         }
 
-        // הפעלה בטעינת הדף
         window.onload = loadZones;
     </script>
 </body>
