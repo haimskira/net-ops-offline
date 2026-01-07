@@ -5,127 +5,298 @@
     <meta charset="UTF-8">
     <title>NetOps - My Rule Requests</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 
     <style>
-        @font-face {
-            font-family: 'Assistant';
-            src: url("{{ url_for('static', filename='fonts/Assistant-Regular.ttf') }}") format('truetype');
-            font-weight: 400;
+        :root {
+            --bg-primary: #020617;
+            --bg-panel: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-color: #06b6d4;
+            --border-color: #334155;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #fb923c;
         }
 
-        @font-face {
-            font-family: 'Assistant';
-            src: url("{{ url_for('static', filename='fonts/Assistant-Bold.ttf') }}") format('truetype');
-            font-weight: 700;
+        body.light-mode {
+            --bg-primary: #f1f5f9;
+            --bg-panel: #ffffff;
+            --bg-card: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Assistant', sans-serif !important;
-            background-color: var(--color-slate-950);
-            color: var(--color-slate-100);
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
             padding: 20px;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.3s, color 0.3s;
         }
 
-
-
-        .glass-card {
-            background: rgba(30, 41, 59, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        .light-mode .glass-card {
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(0, 0, 0, 0.1);
+        .header {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin: 0 0 0.25rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-style: italic;
+            margin: 0;
+        }
+
+        .btn-refresh {
+            background-color: var(--bg-card);
+            border: none;
+            padding: 0.75rem;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            font-size: 1.25rem;
+        }
+
+        .btn-refresh:hover {
+            background-color: var(--border-color);
+        }
+
+        .request-card {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: background-color 0.2s;
+        }
+
+        .request-card:hover {
+            background-color: var(--bg-card);
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .request-info {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .request-icon {
+            font-size: 2rem;
+            margin-top: 0.25rem;
+        }
+
+        .rule-name {
+            font-weight: 700;
+            font-size: 1.125rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .request-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            font-size: 0.75rem;
+            font-family: monospace;
+            color: var(--text-muted);
+        }
+
+        .detail-label {
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        .request-status {
+            text-align: right;
         }
 
         .status-pill {
             padding: 4px 12px;
-            border-radius: 9999px;
+            border-radius: 999px;
             font-size: 0.75rem;
             font-weight: 700;
             border: 1px solid transparent;
         }
 
         .status-pending {
-            color: #fbbf24;
-            background: rgba(251, 191, 36, 0.1);
-            border-color: rgba(251, 191, 36, 0.2);
+            color: var(--warning-color);
+            background: rgba(251, 146, 60, 0.1);
+            border-color: rgba(251, 146, 60, 0.2);
         }
 
         .status-approved {
-            color: #10b981;
+            color: var(--success-color);
             background: rgba(16, 185, 129, 0.1);
             border-color: rgba(16, 185, 129, 0.2);
         }
 
         .status-rejected {
-            color: #ef4444;
+            color: var(--danger-color);
             background: rgba(239, 68, 68, 0.1);
             border-color: rgba(239, 68, 68, 0.2);
         }
 
+        .status-time {
+            font-size: 0.625rem;
+            color: var(--text-muted);
+            margin-top: 1rem;
+            font-family: monospace;
+        }
+
         .admin-note-box {
-            margin-top: 12px;
-            padding: 12px;
-            background: rgba(99, 102, 241, 0.05);
-            border: 1px solid rgba(99, 102, 241, 0.2);
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 8px;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .admin-note-label {
+            font-size: 0.625rem;
+            text-transform: uppercase;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        .admin-note-text {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-style: italic;
+            line-height: 1.5;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 5rem 2rem;
+            border: 2px dashed var(--border-color);
             border-radius: 12px;
         }
 
-        .light-mode .admin-note-box {
-            background: rgba(99, 102, 241, 0.1);
-            border: 1px solid rgba(99, 102, 241, 0.3);
+        .empty-state p {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .btn-create {
+            margin-top: 1rem;
+            background: rgba(6, 182, 212, 0.2);
+            color: var(--accent-color);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-create:hover {
+            background: rgba(6, 182, 212, 0.3);
+        }
+
+        .loader {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            padding: 1.5rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 12px;
+            text-align: center;
+            color: var(--danger-color);
+            font-weight: 700;
         }
     </style>
 </head>
 
 <body>
-    <div class="max-w-5xl mx-auto">
-        <div
-            class="flex justify-between items-center mb-8 glass-card p-6 rounded-3xl border border-slate-700/50 shadow-2xl light-mode:border-slate-300">
+    <div class="container">
+        <div class="header">
             <div>
-                <h1 class="text-2xl font-bold text-indigo-400 flex items-center gap-2">
+                <h1>
                     <span>📜</span> My Request Queue (Rules)
                 </h1>
-                <p class="text-slate-500 text-sm mt-1 italic">Real-time firewall rule approval status</p>
+                <p>Real-time firewall rule approval status</p>
             </div>
-            <button onclick="loadRequests()"
-                class="bg-slate-800 p-3 rounded-full hover:bg-slate-700 transition-all shadow-lg light-mode:bg-slate-200 light-mode:hover:bg-slate-300 text-white light-mode:text-slate-700"
-                title="Refresh Data">
+            <button onclick="loadRequests()" class="btn-refresh" title="Refresh Data">
                 🔄
             </button>
         </div>
 
-        <div id="requests-list" class="space-y-4">
-            <div class="text-center py-20 opacity-50">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500 mb-4"></div>
-                <p class="text-sm">Fetching server data...</p>
+        <div id="requests-list">
+            <div class="empty-state">
+                <div class="loader"></div>
+                <p style="font-size: 0.875rem;">Fetching server data...</p>
             </div>
         </div>
     </div>
 
     <script>
-        /**
-         * טעינת בקשות החוקה מהשרת.
-         */
         async function loadRequests() {
             try {
-                // הוספת timestamp למניעת Cache
                 const res = await fetch(`/get-my-requests?t=${Date.now()}`);
                 const data = await res.json();
                 const container = document.getElementById('requests-list');
 
                 if (!data || data.length === 0) {
                     container.innerHTML = `
-                        <div class="text-center py-20 border-2 border-dashed border-slate-800 rounded-3xl light-mode:border-slate-300">
-                            <p class="text-slate-500 italic">No rule requests associated with you found.</p>
-                            <button onclick="window.parent.toggleComponent('palo-alto')" 
-                                    class="mt-4 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 px-6 py-2 rounded-xl font-bold transition-all border border-indigo-500/30">
+                        <div class="empty-state">
+                            <p>No rule requests associated with you found.</p>
+                            <button onclick="window.parent.toggleComponent('palo-alto')" class="btn-create">
                                 Create New Rule Now ➔
                             </button>
                         </div>`;
@@ -142,39 +313,39 @@
                     else if (status === 'rejected') { sText = "Rejected"; icon = "❌"; }
 
                     return `
-                        <div class="glass-card p-6 rounded-2xl transition-all hover:bg-slate-800/40 border border-slate-700/30 light-mode:hover:bg-white/50 light-mode:border-slate-300">
-                            <div class="flex justify-between items-start">
-                                <div class="flex items-start gap-4">
-                                    <span class="text-3xl mt-1">${icon}</span>
+                        <div class="request-card">
+                            <div class="request-header">
+                                <div class="request-info">
+                                    <span class="request-icon">${icon}</span>
                                     <div>
-                                        <p class="font-bold text-slate-100 text-lg mb-1 light-mode:text-slate-800">${r.rule_name}</p>
-                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-1">
-                                            <p class="text-xs text-slate-400 font-mono light-mode:text-slate-600">
-                                                <span class="text-indigo-400 font-bold">SOURCE:</span> ${r.source_ip || r.source}
+                                        <p class="rule-name">${r.rule_name}</p>
+                                        <div class="request-details">
+                                            <p>
+                                                <span class="detail-label">SOURCE:</span> ${r.source_ip || r.source}
                                             </p>
-                                            <p class="text-xs text-slate-400 font-mono light-mode:text-slate-600">
-                                                <span class="text-indigo-400 font-bold">DEST:</span> ${r.destination_ip || r.destination}
+                                            <p>
+                                                <span class="detail-label">DEST:</span> ${r.destination_ip || r.destination}
                                             </p>
-                                            <p class="text-xs text-slate-300 font-bold light-mode:text-slate-600">
-                                                <span class="text-indigo-400 font-bold">PORT:</span> ${r.service_port}/${r.protocol || 'tcp'}
+                                            <p style="font-weight: 700;">
+                                                <span class="detail-label">PORT:</span> ${r.service_port}/${r.protocol || 'tcp'}
                                             </p>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="text-right flex flex-col items-end">
+                                <div class="request-status">
                                     <span class="status-pill ${sClass}">
                                         ${sText}
                                     </span>
-                                    <p class="text-[10px] text-slate-500 mt-4 font-mono">${r.time || ''}</p>
+                                    <p class="status-time">${r.time || ''}</p>
                                 </div>
                             </div>
 
                             ${r.admin_notes ? `
-                                <div class="admin-note-box flex gap-3 items-start">
-                                    <span class="text-xs">💬</span>
+                                <div class="admin-note-box">
+                                    <span style="font-size: 0.75rem;">💬</span>
                                     <div>
-                                        <p class="text-[10px] text-indigo-400 font-bold uppercase">Admin Note</p>
-                                        <p class="text-sm text-slate-300 italic leading-relaxed light-mode:text-slate-700">${r.admin_notes}</p>
+                                        <p class="admin-note-label">Admin Note</p>
+                                        <p class="admin-note-text">${r.admin_notes}</p>
                                     </div>
                                 </div>
                             ` : ''}
@@ -184,12 +355,26 @@
             } catch (e) {
                 console.error("Error loading requests:", e);
                 document.getElementById('requests-list').innerHTML =
-                    '<div class="p-6 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-center font-bold">⚠️ Communication Error with Management Server</div>';
+                    '<div class="error-message">⚠️ Communication Error with Management Server</div>';
             }
         }
 
+        // Theme sync
+        function syncTheme() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'light') document.body.classList.add('light-mode');
+            else document.body.classList.remove('light-mode');
+        }
+        window.addEventListener('storage', syncTheme);
+        window.addEventListener('message', (event) => {
+            if (event.data === 'theme-toggle' || event.data.type === 'theme-toggle') {
+                document.body.classList.toggle('light-mode');
+            }
+        });
+        syncTheme();
+
         loadRequests();
-        setInterval(loadRequests, 15000); // רענון כל 15 שניות
+        setInterval(loadRequests, 15000);
     </script>
 </body>
 

@@ -4,39 +4,121 @@
 <head>
     <meta charset="UTF-8">
     <title>Policy Inventory Pro</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
     <style>
-        @font-face {
-            font-family: 'Assistant';
-            src: url("{{ url_for('static', filename='fonts/Assistant-Regular.ttf') }}") format('truetype');
-            font-weight: 400;
+        :root {
+            --bg-primary: #020617;
+            --bg-panel: #0f172a;
+            --bg-input: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-color: #06b6d4;
+            --accent-hover: #0891b2;
+            --border-color: #334155;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+        }
+
+        body.light-mode {
+            --bg-primary: #f1f5f9;
+            --bg-panel: #ffffff;
+            --bg-input: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Assistant', sans-serif;
-            background-color: var(--color-slate-950);
-            color: var(--color-slate-100);
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
             padding: 20px;
             overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-style: italic;
+            color: var(--accent-color);
+            margin: 0 0 0.25rem 0;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
             margin: 0;
-            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .rule-count {
+            background-color: var(--bg-input);
+            color: var(--text-muted);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid var(--border-color);
+        }
+
+        .btn {
+            background-color: var(--bg-input);
+            color: var(--text-main);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--border-color);
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: #0b1120;
+            box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.2);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
         }
 
         .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            height: calc(100vh - 120px);
+            flex: 1;
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
             display: flex;
             flex-direction: column;
-            border-radius: 20px;
-        }
-
-        .light-mode .glass-panel {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(0, 0, 0, 0.1);
         }
 
         .table-container {
@@ -55,39 +137,82 @@
             position: sticky;
             top: 0;
             z-index: 20;
-            background: var(--color-slate-950);
-            padding: 12px;
-            border-bottom: 2px solid var(--color-slate-800);
-            color: var(--color-slate-400);
-            font-size: 11px;
+            background-color: var(--bg-primary);
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.6875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            font-family: monospace;
         }
 
         .filter-input {
-            background: var(--color-slate-900);
-            border: 1px solid var(--color-slate-800);
-            color: var(--color-slate-100);
-            font-size: 11px;
-            padding: 6px 10px;
-            border-radius: 8px;
             width: 100%;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-size: 0.6875rem;
+            padding: 6px 10px;
+            border-radius: 6px;
             outline: none;
+            transition: all 0.2s;
         }
 
         .filter-input:focus {
-            border-color: #6366f1;
+            border-color: var(--accent-color);
         }
 
-        /* --- Tooltip System --- */
+        tbody tr {
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.15s;
+        }
+
+        tbody tr:hover {
+            background-color: var(--bg-input);
+        }
+
+        td {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+            color: var(--text-main);
+        }
+
+        .rule-name {
+            color: var(--accent-color);
+            font-weight: 700;
+            font-size: 0.6875rem;
+        }
+
+        .zone-text {
+            color: var(--text-muted);
+        }
+
         .obj-tag {
             position: relative;
             display: inline-flex;
             align-items: center;
-            background: var(--color-slate-900);
-            padding: 4px 10px;
-            border-radius: 8px;
+            background-color: var(--bg-input);
+            padding: 4px 8px;
+            border-radius: 6px;
             margin: 2px;
-            border-right: 4px solid #475569;
+            border-right: 3px solid;
             cursor: help;
+            font-size: 0.6875rem;
+            font-weight: 700;
+        }
+
+        .obj-tag.obj-group {
+            border-right-color: #6366f1;
+        }
+
+        .obj-tag.obj-host {
+            border-right-color: var(--success-color);
+        }
+
+        .obj-tag.obj-app {
+            border-right-color: #a855f7;
         }
 
         .obj-tag::after {
@@ -100,7 +225,7 @@
             color: white;
             padding: 6px 12px;
             border-radius: 6px;
-            font-size: 11px;
+            font-size: 0.6875rem;
             white-space: pre-wrap;
             width: max-content;
             max-width: 250px;
@@ -118,110 +243,69 @@
             visibility: visible;
         }
 
-        /* Color Coding */
-        .obj-group {
-            border-right-color: #6366f1;
-        }
-
-        /* Group: Blue */
-        .obj-host {
-            border-right-color: #10b981;
-        }
-
-        /* Host: Green */
-        .obj-app {
-            border-right-color: #a855f7;
-        }
-
-        /* App: Purple */
-
-        .obj-name {
-            font-size: 11px;
-            font-weight: bold;
-            color: var(--color-slate-200);
-        }
-
         .badge-allow {
-            color: #10b981;
-            border: 1px solid #10b981;
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
             padding: 2px 8px;
             border-radius: 10px;
-            font-size: 10px;
-            font-weight: bold;
+            font-size: 0.625rem;
+            font-weight: 700;
             text-transform: uppercase;
         }
 
         .badge-deny {
-            color: #ef4444;
-            border: 1px solid #ef4444;
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
             padding: 2px 8px;
             border-radius: 10px;
-            font-size: 10px;
-            font-weight: bold;
+            font-size: 0.625rem;
+            font-weight: 700;
             text-transform: uppercase;
         }
 
-        /* Table Row Styling */
-        tr:hover td {
-            background-color: var(--color-slate-900) !important;
-        }
-
-        /* Custom Scrollbar for Container */
         ::-webkit-scrollbar {
             width: 8px;
         }
 
         ::-webkit-scrollbar-thumb {
-            background: var(--color-slate-700);
+            background: var(--border-color);
             border-radius: 4px;
         }
 
         ::-webkit-scrollbar-track {
             background: transparent;
         }
-
-        /* Semantic Classes for JS */
-        .table-text {
-            color: var(--color-slate-400);
-        }
     </style>
 </head>
 
-<body class="flex flex-col h-screen">
-
-    <div class="mb-6 flex justify-between items-end shrink-0">
+<body>
+    <div class="header">
         <div>
-            <h1 class="text-2xl font-bold text-indigo-400 italic">Firewall Policy Viewer</h1>
-            <p class="text-slate-500 text-sm">Policy Display</p>
+            <h1>Firewall Policy Viewer</h1>
+            <p>Policy Display</p>
         </div>
-        <div class="flex gap-3">
-            <span id="row-count"
-                class="bg-slate-800 text-slate-400 px-4 py-2 rounded-xl text-xs font-bold border border-slate-700">0
-                Rules</span>
-            <button onclick="loadPolicies()"
-                class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all">Refresh
-                View 👁️</button>
-            <button id="sync-btn" onclick="triggerDeepSync()"
-                class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-lg transition-all">Full
-                Firewall Sync 🔄</button>
+        <div class="header-controls">
+            <span id="row-count" class="rule-count">0 Rules</span>
+            <button onclick="loadPolicies()" class="btn">Refresh View 👁️</button>
+            <button id="sync-btn" onclick="triggerDeepSync()" class="btn btn-primary">Full Firewall Sync 🔄</button>
         </div>
     </div>
 
-    <div class="glass-panel overflow-hidden shadow-2xl">
-        <div class="table-container custom-scroll">
+    <div class="glass-panel">
+        <div class="table-container">
             <table id="policyTable">
                 <thead>
                     <tr>
-                        <th class="w-1/6">Rule Name</th>
-                        <th class="w-24">From</th>
-                        <th class="w-24">To</th>
+                        <th style="width: 16%;">Rule Name</th>
+                        <th style="width: 100px;">From</th>
+                        <th style="width: 100px;">To</th>
                         <th>Source Objects</th>
                         <th>Dest Objects</th>
                         <th>Service</th>
                         <th>Application</th>
-                        <th class="w-20">Action</th>
+                        <th style="width: 80px;">Action</th>
                     </tr>
-                    <tr class="bg-slate-900/50 light-mode:bg-slate-100/50">
+                    <tr style="background-color: rgba(0, 0, 0, 0.2);">
                         <th><input type="text" class="filter-input" data-col="name" placeholder="Name..."></th>
                         <th><input type="text" class="filter-input" data-col="from" placeholder="Zone..."></th>
                         <th><input type="text" class="filter-input" data-col="to" placeholder="Zone..."></th>
@@ -229,14 +313,15 @@
                         <th><input type="text" class="filter-input" data-col="destinations" placeholder="IP or Name...">
                         </th>
                         <th><input type="text" class="filter-input" data-col="services" placeholder="Port..."></th>
-                        <th><input type="text" class="filter-input" data-col="applications" placeholder="App...">
-                        </th>
+                        <th><input type="text" class="filter-input" data-col="applications" placeholder="App..."></th>
                         <th></th>
                     </tr>
                 </thead>
-                <tbody id="policy-body" class="divide-y divide-slate-800/50 light-mode:divide-slate-200/50">
+                <tbody id="policy-body">
                     <tr>
-                        <td colspan="8" class="p-20 text-center text-slate-500 italic">Loading data...</td>
+                        <td colspan="8"
+                            style="padding: 3rem; text-align: center; color: var(--text-muted); font-style: italic;">
+                            Loading data...</td>
                     </tr>
                 </tbody>
             </table>
@@ -244,9 +329,6 @@
     </div>
 
     <script>
-        /**
-         * מפעיל סנכרון עמוק מול ה-API של הפיירוול.
-         */
         async function triggerDeepSync() {
             const btn = document.getElementById('sync-btn');
             const originalText = btn.innerText;
@@ -267,12 +349,9 @@
 
         let allPolicies = [];
 
-        /**
-         * טוען את החוקים מה-Database המקומי.
-         */
         async function loadPolicies() {
             const body = document.getElementById('policy-body');
-            body.innerHTML = '<tr><td colspan="8" class="p-20 text-center text-indigo-400 animate-pulse italic">Loading from DB...</td></tr>';
+            body.innerHTML = '<tr><td colspan="8" style="padding: 3rem; text-align: center; color: var(--accent-color); font-style: italic;">Loading from DB...</td></tr>';
             try {
                 const res = await fetch(`/get-all-policies?t=${Date.now()}`);
                 allPolicies = await res.json();
@@ -280,15 +359,12 @@
             } catch (e) { console.error("Load Error:", e); }
         }
 
-        /**
-         * מרנדר את טבלת החוקים לתוך ה-DOM.
-         */
         function renderTable(policies) {
             const body = document.getElementById('policy-body');
             document.getElementById('row-count').innerText = `${policies.length} Rules`;
 
             if (policies.length === 0) {
-                body.innerHTML = '<tr><td colspan="8" class="p-20 text-center text-slate-500">No matching rules found</td></tr>';
+                body.innerHTML = '<tr><td colspan="8" style="padding: 3rem; text-align: center; color: var(--text-muted);">No matching rules found</td></tr>';
                 return;
             }
 
@@ -296,38 +372,32 @@
                 const actionClass = (p.action && p.action.toLowerCase() === 'allow') ? 'badge-allow' : 'badge-deny';
 
                 return `
-                    <tr class="transition-colors">
-                        <td class="p-4 font-bold text-indigo-300 truncate max-w-xs">${p.name}</td>
-                        <td class="p-4 table-text">${p.from}</td>
-                        <td class="p-4 table-text">${p.to}</td>
-                        <td class="p-2">${renderTags(p.sources)}</td>
-                        <td class="p-2">${renderTags(p.destinations)}</td>
-                        <td class="p-2">${renderTags(p.services, true)}</td>
-                        <td class="p-2">${renderTags(p.applications, false, 'app')}</td>
-                        <td class="p-4 text-center"><span class="${actionClass}">${p.action}</span></td>
+                    <tr>
+                        <td><span class="rule-name">${p.name}</span></td>
+                        <td class="zone-text">${p.from}</td>
+                        <td class="zone-text">${p.to}</td>
+                        <td>${renderTags(p.sources)}</td>
+                        <td>${renderTags(p.destinations)}</td>
+                        <td>${renderTags(p.services, true)}</td>
+                        <td>${renderTags(p.applications, false, 'app')}</td>
+                        <td style="text-align: center;"><span class="${actionClass}">${p.action}</span></td>
                     </tr>
                 `;
             }).join('');
         }
 
-        /**
-         * מייצר תגיות ויזואליות לאובייקטים (עם Tooltip).
-         */
         function renderTags(objs, isSvc = false, forceType = null) {
-            if (!objs || objs.length === 0) return `<span class="text-slate-600 text-xs italic">any</span>`;
+            if (!objs || objs.length === 0) return `<span style="color: var(--text-muted); font-size: 0.75rem; font-style: italic;">any</span>`;
 
-            return `<div class="flex flex-wrap gap-1">` + objs.map(o => {
+            return `<div style="display: flex; flex-wrap: wrap; gap: 4px;">` + objs.map(o => {
                 let typeClass = o.is_group ? 'obj-group' : 'obj-host';
                 if (forceType === 'app') typeClass = 'obj-app';
 
                 const tooltipText = o.value || 'Info unavailable';
-                return `<div class="obj-tag ${typeClass}" title="${tooltipText}" data-tooltip="Content: ${tooltipText}"><span class="obj-name">${o.name}</span></div>`;
+                return `<div class="obj-tag ${typeClass}" title="${tooltipText}" data-tooltip="Content: ${tooltipText}">${o.name}</div>`;
             }).join('') + `</div>`;
         }
 
-        /**
-         * פילטר דינמי לטבלה (Client-side).
-         */
         function applyFilters() {
             const inputs = Array.from(document.querySelectorAll('.filter-input'));
             const filtered = allPolicies.filter(p => {
@@ -348,8 +418,22 @@
             renderTable(filtered);
         }
 
-        // Event Listeners
         document.querySelectorAll('.filter-input').forEach(i => i.addEventListener('input', applyFilters));
+
+        // Theme sync
+        function syncTheme() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'light') document.body.classList.add('light-mode');
+            else document.body.classList.remove('light-mode');
+        }
+        window.addEventListener('storage', syncTheme);
+        window.addEventListener('message', (event) => {
+            if (event.data === 'theme-toggle' || event.data.type === 'theme-toggle') {
+                document.body.classList.toggle('light-mode');
+            }
+        });
+        syncTheme();
+
         window.onload = loadPolicies;
     </script>
 </body>

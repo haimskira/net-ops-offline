@@ -3,117 +3,541 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>NetOps - Object Approval & History</title>
-
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <title>Object Management & Approval - NetOps Admin</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 
     <style>
-        @font-face {
-            font-family: 'Assistant';
-            src: url("{{ url_for('static', filename='fonts/Assistant-Regular.ttf') }}") format('truetype');
-            font-weight: 400;
+        :root {
+            --bg-primary: #020617;
+            --bg-panel: #0f172a;
+            --bg-input: #1e293b;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-color: #a855f7;
+            --accent-hover: #9333ea;
+            --border-color: #334155;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #fb923c;
         }
 
-        @font-face {
-            font-family: 'Assistant';
-            src: url("{{ url_for('static', filename='fonts/Assistant-Bold.ttf') }}") format('truetype');
-            font-weight: 700;
+        body.light-mode {
+            --bg-primary: #f1f5f9;
+            --bg-panel: #ffffff;
+            --bg-input: #e2e8f0;
+            --bg-card: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Assistant', sans-serif !important;
-            background-color: var(--color-slate-950);
-            color: var(--color-slate-100);
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
             padding: 20px;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.3s, color 0.3s;
         }
 
+        /* Header */
+        .header {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
 
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin: 0 0 0.25rem 0;
+        }
 
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin: 0;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        #bulk-toolbar {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            background-color: var(--bg-input);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        #bulk-toolbar.show {
+            display: flex;
+        }
+
+        #selected-count {
+            color: var(--text-main);
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+
+        .divider {
+            height: 32px;
+            width: 1px;
+            background-color: var(--border-color);
+        }
+
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-reject {
+            color: var(--danger-color);
+            background: transparent;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-reject:hover {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-approve {
+            background-color: var(--accent-color);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(168, 85, 247, 0.2);
+        }
+
+        .btn-approve:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-refresh {
+            background-color: var(--bg-input);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-refresh:hover {
+            color: var(--accent-color);
+        }
+
+        /* Object Cards */
         .obj-card {
-            transition: all 0.3s ease;
-            border-width: 1px;
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s;
         }
 
-        .obj-approved {
-            border-color: #10b981 !important;
-            background: rgba(16, 185, 129, 0.05) !important;
+        .obj-card.approved {
+            border-color: var(--success-color);
+            background: rgba(16, 185, 129, 0.05);
             opacity: 0.85;
         }
 
-        .obj-rejected {
-            border-color: #ef4444 !important;
-            background: rgba(239, 68, 68, 0.05) !important;
+        .obj-card.rejected {
+            border-color: var(--danger-color);
+            background: rgba(239, 68, 68, 0.05);
             opacity: 0.85;
         }
 
-        .obj-pending {
-            border-color: var(--color-slate-700);
-            background: rgba(30, 41, 59, 0.4);
+        /* Checkbox */
+        .custom-checkbox {
+            appearance: none;
+            background-color: var(--bg-input);
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--accent-color);
+            border-radius: 4px;
+            cursor: pointer;
+            display: grid;
+            place-content: center;
+            flex-shrink: 0;
         }
 
-        .light-mode .obj-pending {
-            border-color: var(--color-slate-300);
-            background: rgba(255, 255, 255, 0.6);
+        body.light-mode .custom-checkbox {
+            background-color: white;
         }
 
+        .custom-checkbox:checked {
+            background-color: var(--accent-color);
+        }
+
+        .custom-checkbox:checked::before {
+            content: "✔";
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .obj-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.5rem;
+            flex: 1;
+            font-size: 0.875rem;
+        }
+
+        .obj-field p {
+            margin: 0;
+        }
+
+        .field-label {
+            font-size: 0.625rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .field-value {
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .field-value.requester {
+            font-size: 0.875rem;
+        }
+
+        .field-value.type {
+            color: var(--accent-color);
+            font-size: 0.6875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 900;
+        }
+
+        .field-value.name {
+            font-family: monospace;
+            color: var(--accent-color);
+            font-size: 0.75rem;
+        }
+
+        .member-badge {
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 0.625rem;
+            margin: 1px;
+            display: inline-block;
+            color: var(--accent-color);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.625rem;
+            font-weight: 800;
+            border: 1px solid;
+        }
+
+        .status-pending {
+            color: var(--warning-color);
+            background: rgba(251, 146, 60, 0.1);
+            border-color: rgba(251, 146, 60, 0.2);
+        }
+
+        .status-approved {
+            color: var(--success-color);
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .status-rejected {
+            color: var(--danger-color);
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .obj-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+            min-width: 150px;
+            justify-content: flex-end;
+        }
+
+        .btn-icon {
+            background-color: var(--bg-input);
+            border: none;
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            background-color: var(--accent-color);
+        }
+
+        body.light-mode .btn-icon {
+            background-color: var(--border-color);
+        }
+
+        body.light-mode .btn-icon:hover {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn-action {
+            padding: 0.375rem 0.75rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-action.reject {
+            color: var(--danger-color);
+            background: transparent;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-action.reject:hover {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-action.approve {
+            background-color: var(--accent-color);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(168, 85, 247, 0.2);
+        }
+
+        .btn-action.approve:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .admin-note {
+            margin-top: 0.75rem;
+            margin-left: 3.5rem;
+            padding: 0.75rem;
+            background: rgba(168, 85, 247, 0.05);
+            border-left: 2px solid rgba(168, 85, 247, 0.2);
+            border-radius: 0 8px 8px 0;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Modals - Same style as admin_approval */
         .modal {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(8px);
-            background-color: rgba(15, 23, 42, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 100;
         }
 
-        .light-mode .modal {
+        body.light-mode .modal {
             background-color: rgba(255, 255, 255, 0.8);
         }
 
-        select,
-        input,
-        textarea {
-            background-color: var(--color-slate-800) !important;
-            color: var(--color-slate-100) !important;
-            border: 1px solid var(--color-slate-700) !important;
+        .modal.hidden {
+            display: none;
         }
 
-        .light-mode select,
-        .light-mode input,
-        .light-mode textarea {
-            background-color: var(--color-white) !important;
-            color: var(--color-slate-900) !important;
-            border: 1px solid var(--color-slate-300) !important;
-        }
-
-        .pop-in {
-            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        .modal-content {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         @keyframes popIn {
-            0% {
+            from {
                 opacity: 0;
                 transform: scale(0.9) translateY(20px);
             }
 
-            100% {
+            to {
                 opacity: 1;
                 transform: scale(1) translateY(0);
             }
         }
 
-        .member-badge {
-            background: rgba(99, 102, 241, 0.1);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            padding: 1px 6px;
-            border-radius: 4px;
-            font-size: 10px;
-            margin: 1px;
-            display: inline-block;
-            color: #a5b4fc;
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .light-mode .member-badge {
-            color: #6366f1;
-            border-color: rgba(99, 102, 241, 0.3);
+        .modal-header.success {
+            background: rgba(168, 85, 247, 0.05);
+            position: relative;
+        }
+
+        .modal-header.success::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(to right, var(--accent-color), var(--accent-hover));
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        .modal-body {
+            padding: 2rem 1.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-field.full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        input,
+        select,
+        textarea {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            padding: 0.625rem 1rem;
+            font-size: 0.875rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        body.light-mode input,
+        body.light-mode select,
+        body.light-mode textarea {
+            background-color: white;
+            border-color: var(--border-color);
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--accent-color);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        body.light-mode .modal-footer {
+            background-color: var(--bg-input);
+        }
+
+        .btn-cancel {
+            padding: 0.625rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel:hover {
+            background-color: var(--bg-input);
+            color: var(--text-main);
+        }
+
+        .btn-primary {
+            padding: 0.625rem 2rem;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(168, 85, 247, 0.2);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+            transform: scale(1.05);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
         }
 
         .custom-scroll::-webkit-scrollbar {
@@ -121,171 +545,100 @@
         }
 
         .custom-scroll::-webkit-scrollbar-thumb {
-            background: var(--color-slate-700);
+            background: var(--border-color);
             border-radius: 10px;
-        }
-
-        .light-mode .custom-scroll::-webkit-scrollbar-thumb {
-            background: var(--color-slate-300);
-        }
-
-        /* Styles for inner modal containers to support light mode */
-        .modal-content {
-            background-color: var(--color-slate-900);
-            border-color: var(--color-slate-700);
-        }
-
-        .light-mode .modal-content {
-            background-color: var(--color-white);
-            border-color: var(--color-slate-200);
-        }
-
-        .custom-checkbox {
-            appearance: none;
-            background-color: var(--color-slate-800);
-            margin: 0;
-            font: inherit;
-            color: currentColor;
-            width: 1.25em;
-            height: 1.25em;
-            border: 2px solid #a855f7;
-            border-radius: 0.25em;
-            display: grid;
-            place-content: center;
-            cursor: pointer;
-        }
-
-        .light-mode .custom-checkbox {
-            background-color: white;
-            border-color: #9333ea;
-        }
-
-        .custom-checkbox::before {
-            content: "";
-            width: 0.65em;
-            height: 0.65em;
-            transform: scale(0);
-            transition: 120ms transform ease-in-out;
-            box-shadow: inset 1em 1em white;
-            transform-origin: center;
-            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-        }
-
-        .custom-checkbox:checked::before {
-            transform: scale(1);
-        }
-
-        .custom-checkbox:checked {
-            background-color: #a855f7;
         }
     </style>
 </head>
 
 <body>
-
-    <div
-        class="flex justify-between items-center mb-6 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl sticky top-0 z-40 light-mode:bg-white light-mode:border-slate-200">
+    <div class="header">
         <div>
-            <h1 class="text-2xl font-bold text-purple-400">Object Management & Approval</h1>
-            <p class="text-slate-500 text-sm">Approve new requests and view infrastructure history</p>
+            <h1>Object Management & Approval</h1>
+            <p>Approve new requests and view infrastructure history</p>
         </div>
 
-        <div class="flex gap-4 items-center">
-            <div id="bulk-toolbar"
-                class="hidden flex items-center gap-3 bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 light-mode:bg-slate-100 light-mode:border-slate-300">
-                <span id="selected-count" class="text-white font-bold text-sm ml-2 light-mode:text-slate-800">0
-                    Selected</span>
-                <button onclick="bulkReject()"
-                    class="text-rose-400 border border-rose-600/30 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-rose-600 hover:text-white transition-colors">Reject
-                    Selected</button>
-                <button onclick="bulkApprove()"
-                    class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-lg">Approve
-                    Selected</button>
+        <div class="header-controls">
+            <div id="bulk-toolbar">
+                <span id="selected-count">0 Selected</span>
+                <button onclick="bulkReject()" class="btn btn-reject">Reject Selected</button>
+                <button onclick="bulkApprove()" class="btn btn-approve">Approve Selected</button>
             </div>
-
-            <div class="h-8 w-px bg-slate-700 mx-2 light-mode:bg-slate-300"></div>
-
-            <button onclick="loadObjects()"
-                class="bg-slate-800 hover:bg-slate-700 p-3 rounded-xl transition-all border border-slate-700 text-slate-400 hover:text-white light-mode:bg-slate-100 light-mode:border-slate-300 light-mode:text-slate-500 light-mode:hover:text-purple-600">
-                <span class="text-xl">🔄</span>
-            </button>
+            <div class="divider"></div>
+            <button onclick="loadObjects()" class="btn-refresh" title="Refresh">🔄</button>
         </div>
     </div>
 
-    <div id="objects-container" class="space-y-4 pb-20"></div>
+    <div id="objects-container" style="padding-bottom: 4rem;"></div>
 
-    <div id="confirmModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 modal">
-        <div
-            class="modal-content border border-purple-500/30 p-8 rounded-3xl w-full max-w-sm shadow-2xl text-center pop-in relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 to-fuchsia-600"></div>
-            <h3 class="text-2xl font-bold text-white mb-2 light-mode:text-slate-800">Approve Objects</h3>
-            <p id="confirmMessage" class="text-slate-400 text-sm mb-8 px-4 light-mode:text-slate-600">Are you sure?
-                This action will create the objects in the firewall.</p>
-            <div class="flex gap-3 justify-center">
-                <button onclick="closeConfirmModal()"
-                    class="px-6 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800 transition-all font-bold text-sm light-mode:text-slate-500 light-mode:hover:bg-slate-100">Cancel</button>
-                <button onclick="executeBulkApprove()"
-                    class="px-6 py-2.5 rounded-xl bg-purple-600 text-white font-bold shadow-lg text-sm transition-all">Yes,
-                    Approve</button>
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 500px; text-align: center;">
+            <div class="modal-header success">
+                <h3 class="modal-title">Approve Objects</h3>
+                <p id="confirmMessage" style="color: var(--text-muted); font-size: 0.875rem; margin: 0.5rem 0 0 0;">Are
+                    you sure? This action will create the objects in the firewall.</p>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button onclick="closeConfirmModal()" class="btn-cancel">Cancel</button>
+                <button onclick="executeBulkApprove()" class="btn-primary">Yes, Approve</button>
             </div>
         </div>
     </div>
 
-    <div id="editModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal p-4">
-        <div
-            class="modal-content border border-slate-700 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden pop-in light-mode:border-slate-200">
-            <div
-                class="p-6 border-b border-slate-800 bg-purple-600/10 flex justify-between items-center light-mode:border-slate-200">
-                <h2 class="text-xl font-bold text-purple-400">Edit Request Details</h2>
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2 class="modal-title" style="color: var(--accent-color);">Edit Request Details</h2>
             </div>
-            <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-6" id="editForm">
+            <div class="modal-body">
                 <input type="hidden" id="edit_id">
-                <div class="md:col-span-2 space-y-1">
-                    <label class="text-xs text-slate-500 font-bold">Object Name</label>
-                    <input id="edit_name" class="w-full p-2.5 rounded-xl outline-none">
-                </div>
-                <div class="md:col-span-2 space-y-1">
-                    <label class="text-xs text-slate-500 font-bold">Value (IP or comma-separated members)</label>
-                    <input id="edit_value" class="w-full p-2.5 rounded-xl outline-none">
-                </div>
-                <div class="space-y-1 hidden" id="field_prefix">
-                    <label class="text-xs text-blue-400 font-bold">Prefix (Mask)</label>
-                    <select id="edit_prefix" class="w-full p-2.5 rounded-xl outline-none">
-                        <option value="32">/32</option>
-                        <option value="24">/24</option>
-                        <option value="16">/16</option>
-                    </select>
-                </div>
-                <div class="space-y-1 hidden" id="field_protocol">
-                    <label class="text-xs text-orange-400 font-bold">Protocol</label>
-                    <select id="edit_protocol" class="w-full p-2.5 rounded-xl outline-none">
-                        <option value="tcp">TCP</option>
-                        <option value="udp">UDP</option>
-                    </select>
+                <div class="form-grid">
+                    <div class="form-field full">
+                        <label>Object Name</label>
+                        <input id="edit_name">
+                    </div>
+                    <div class="form-field full">
+                        <label>Value (IP or comma-separated members)</label>
+                        <input id="edit_value">
+                    </div>
+                    <div class="form-field" id="field_prefix" style="display: none;">
+                        <label style="color: #06b6d4;">Prefix (Mask)</label>
+                        <select id="edit_prefix">
+                            <option value="32">/32</option>
+                            <option value="24">/24</option>
+                            <option value="16">/16</option>
+                        </select>
+                    </div>
+                    <div class="form-field" id="field_protocol" style="display: none;">
+                        <label style="color: #fb923c;">Protocol</label>
+                        <select id="edit_protocol">
+                            <option value="tcp">TCP</option>
+                            <option value="udp">UDP</option>
+                        </select>
+                    </div>
                 </div>
             </div>
-            <div
-                class="p-6 bg-slate-900/50 flex justify-end gap-3 border-t border-slate-800 light-mode:bg-slate-100 light-mode:border-slate-200">
-                <button onclick="closeEdit()"
-                    class="px-6 py-2 rounded-xl text-slate-400 hover:bg-slate-800 transition-all font-bold text-sm light-mode:text-slate-600 light-mode:hover:bg-slate-200">Cancel</button>
-                <button onclick="saveEdit()"
-                    class="px-8 py-2 rounded-xl bg-purple-600 text-white hover:bg-purple-500 font-bold shadow-lg text-sm">Save
-                    Update</button>
+            <div class="modal-footer">
+                <button onclick="closeEdit()" class="btn-cancel">Cancel</button>
+                <button onclick="saveEdit()" class="btn-primary">Save Update</button>
             </div>
         </div>
     </div>
 
-    <div id="rejectModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal">
-        <div class="modal-content border border-slate-700 p-6 rounded-2xl w-full max-w-md shadow-2xl pop-in">
-            <h3 class="text-xl font-bold text-rose-400 mb-4">Reject Request</h3>
-            <textarea id="rejectReason"
-                class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white mb-6 h-32 outline-none focus:border-rose-500 light-mode:bg-white light-mode:text-slate-800 light-mode:border-slate-300"
-                placeholder="Explain why the request was rejected..."></textarea>
-            <div class="flex justify-end gap-3 font-bold">
-                <button onclick="closeRejectModal()"
-                    class="text-slate-400 hover:text-white px-4 py-2 light-mode:text-slate-500 light-mode:hover:text-slate-800">Cancel</button>
-                <button id="confirmRejectBtn"
-                    class="bg-rose-600 hover:bg-rose-500 text-white px-6 py-2 rounded-xl">Reject</button>
+    <!-- Reject Modal -->
+    <div id="rejectModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 class="modal-title" style="color: var(--danger-color);">Reject Request</h3>
+            </div>
+            <div class="modal-body">
+                <textarea id="rejectReason" placeholder="Explain why the request was rejected..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeRejectModal()" class="btn-cancel">Cancel</button>
+                <button id="confirmRejectBtn" class="btn-primary btn-danger">Reject</button>
             </div>
         </div>
     </div>
@@ -297,25 +650,20 @@
 
         window.onload = loadObjects;
 
-        /**
-         * טעינת כל האובייקטים (כולל היסטוריה) ועדכון מונים
-         */
         async function loadObjects() {
             try {
                 const res = await fetch('/get-admin-view-objects');
                 allObjects = await res.json();
 
-                // עדכון המונה ב-Navbar של ה-Parent (רק בקשות Pending)
                 const pendingCount = allObjects.filter(o => (o.status || '').toLowerCase() === 'pending').length;
                 window.parent.postMessage({ type: 'UPDATE_COUNTER', source: 'objects', count: pendingCount }, '*');
 
                 renderUI();
             } catch (e) {
-                document.getElementById('objects-container').innerHTML = '<p class="text-rose-500 text-center py-10">Server communication error</p>';
+                document.getElementById('objects-container').innerHTML = '<p style="text-align: center; padding: 3rem; color: var(--danger-color); font-weight: 700;">Server communication error</p>';
             }
         }
 
-        // --- לוגיקה של בחירה מרובה ---
         function toggleSelection(id) {
             if (selectedObjects.has(id)) selectedObjects.delete(id);
             else selectedObjects.add(id);
@@ -326,16 +674,82 @@
             const toolbar = document.getElementById('bulk-toolbar');
             const countSpan = document.getElementById('selected-count');
             if (selectedObjects.size > 0) {
-                toolbar.classList.remove('hidden');
-                toolbar.classList.add('flex');
+                toolbar.classList.add('show');
                 countSpan.innerText = `${selectedObjects.size} Selected`;
             } else {
-                toolbar.classList.add('hidden');
-                toolbar.classList.remove('flex');
+                toolbar.classList.remove('show');
             }
         }
 
-        // --- אישור (Approve) ---
+        function renderUI() {
+            const container = document.getElementById('objects-container');
+            if (!allObjects || allObjects.length === 0) {
+                container.innerHTML = '<p style="text-align: center; padding: 3rem; color: var(--text-muted); font-style: italic;">No requests to display.</p>';
+                return;
+            }
+
+            container.innerHTML = allObjects.map(obj => {
+                const status = (obj.status || 'Pending').toLowerCase();
+                let cardClass = status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : '';
+
+                let badgeColor = status === 'approved' ? 'status-approved' : status === 'rejected' ? 'status-rejected' : 'status-pending';
+                let statusLabel = status === 'approved' ? '✔ Approved' : status === 'rejected' ? '✘ Rejected' : '⏳ Pending';
+
+                const type = (obj.obj_type || obj.type || 'ADDRESS').toUpperCase();
+                const isChecked = selectedObjects.has(obj.id) ? 'checked' : '';
+
+                let displayVal = "";
+                if (type.includes('GROUP')) {
+                    const members = obj.value ? obj.value.split(',') : [];
+                    displayVal = members.map(m => `<span class="member-badge">${m.trim()}</span>`).join('');
+                } else {
+                    displayVal = `<span style="font-family: monospace; font-size: 0.75rem; color: var(--text-muted);">${obj.value}${obj.prefix ? '/' + obj.prefix : ''} ${obj.protocol ? '[' + obj.protocol + ']' : ''}</span>`;
+                }
+
+                let actionTime = obj.request_time ? `<p style="font-size: 0.625rem; color: var(--text-muted); font-family: monospace; text-align: left;">Action Date:<br>${obj.request_time}</p>` : '';
+
+                const result = `
+                <div class="obj-card ${cardClass}">
+                    ${status === 'pending' ? `<input type="checkbox" class="custom-checkbox" onchange="toggleSelection(${obj.id})" ${isChecked}>` : '<div style="width: 20px; text-align: center; color: var(--text-muted);">#</div>'}
+                    
+                    <div class="obj-grid">
+                        <div class="obj-field">
+                            <p class="field-label">Requester</p>
+                            <p class="field-value requester">👤 ${obj.requested_by}</p>
+                        </div>
+                        <div class="obj-field">
+                            <p class="field-label">Type</p>
+                            <p class="field-value type">${type}</p>
+                        </div>
+                        <div class="obj-field">
+                            <p class="field-label">Name</p>
+                            <p class="field-value name" title="${obj.name}">${obj.name}</p>
+                        </div>
+                        <div class="obj-field">
+                            <p class="field-label">Value / Members</p>
+                            <div class="custom-scroll" style="max-height: 48px; overflow-y: auto;">${displayVal}</div>
+                        </div>
+                        <div class="obj-field" style="text-align: center;">
+                            <span class="status-badge ${badgeColor}">${statusLabel}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="obj-actions">
+                        ${status === 'pending' ? `
+                            <button onclick="openEdit(${obj.id})" class="btn-icon" title="Edit">📝</button>
+                            <button onclick="openRejectModal(${obj.id})" class="btn-action reject">Reject</button>
+                            <button onclick="selectedObjects.add(${obj.id}); bulkApprove();" class="btn-action approve">Approve</button>
+                        ` : actionTime}
+                    </div>
+                </div>`;
+
+                if (obj.admin_notes) {
+                    return result + `<div class="admin-note">💬 Admin Note: ${obj.admin_notes}</div>`;
+                }
+                return result;
+            }).join('');
+        }
+
         function bulkApprove() {
             if (selectedObjects.size === 0) return;
             document.getElementById('confirmMessage').innerHTML = `Approve <b>${selectedObjects.size}</b> objects for creation in firewall?`;
@@ -346,7 +760,6 @@
             closeConfirmModal();
             const ids = Array.from(selectedObjects);
             for (let id of ids) {
-                // קריאה לנתיב האישור ב-Backend
                 await fetch(`/approve-object/${id}`, { method: 'POST' });
             }
             selectedObjects.clear();
@@ -356,7 +769,6 @@
 
         function closeConfirmModal() { document.getElementById('confirmModal').classList.add('hidden'); }
 
-        // --- דחייה (Reject) ---
         function bulkReject() {
             objectIdToReject = null;
             document.getElementById('rejectReason').value = "";
@@ -389,7 +801,6 @@
 
         function closeRejectModal() { document.getElementById('rejectModal').classList.add('hidden'); }
 
-        // --- עריכה (Edit) ---
         function openEdit(id) {
             const obj = allObjects.find(o => o.id === id);
             if (!obj) return;
@@ -399,8 +810,11 @@
             document.getElementById('edit_value').value = obj.value;
 
             const type = (obj.obj_type || obj.type || '').toLowerCase();
-            document.getElementById('field_prefix').classList.toggle('hidden', !type.includes('address') || type.includes('group'));
-            document.getElementById('field_protocol').classList.toggle('hidden', !type.includes('service') || type.includes('group'));
+            const showPrefix = type.includes('address') && !type.includes('group');
+            const showProtocol = type.includes('service') && !type.includes('group');
+
+            document.getElementById('field_prefix').style.display = showPrefix ? 'block' : 'none';
+            document.getElementById('field_protocol').style.display = showProtocol ? 'block' : 'none';
 
             if (obj.prefix) document.getElementById('edit_prefix').value = obj.prefix;
             if (obj.protocol) document.getElementById('edit_protocol').value = obj.protocol;
@@ -427,75 +841,21 @@
             } catch (e) { alert("Update Error"); }
         }
 
-        // --- בניית הממשק (Render UI) ---
-        function renderUI() {
-            const container = document.getElementById('objects-container');
-            if (!allObjects || allObjects.length === 0) {
-                container.innerHTML = '<p class="text-slate-500 text-center py-20 italic">No requests to display.</p>';
-                return;
-            }
-
-            container.innerHTML = allObjects.map(obj => {
-                const status = (obj.status || 'Pending').toLowerCase();
-                let statusClass = status === 'approved' ? "obj-approved" : status === 'rejected' ? "obj-rejected" : "obj-pending";
-
-                let badgeColor = status === 'approved' ? 'text-emerald-500 bg-emerald-500/10' : status === 'rejected' ? 'text-rose-500 bg-rose-500/10' : 'text-orange-400 bg-orange-400/10';
-                let statusLabel = status === 'approved' ? '✔ Approved' : status === 'rejected' ? '✘ Rejected' : '⏳ Pending';
-
-                const type = (obj.obj_type || obj.type || 'ADDRESS').toUpperCase();
-                const isChecked = selectedObjects.has(obj.id) ? 'checked' : '';
-
-                // טיפול בערך: אם זו קבוצה, נציג חברים כפילים
-                let displayVal = "";
-                if (type.includes('GROUP')) {
-                    const members = obj.value ? obj.value.split(',') : [];
-                    displayVal = members.map(m => `<span class="member-badge">${m.trim()}</span>`).join('');
-                } else {
-                    displayVal = `<span class="font-mono text-slate-300 text-xs light-mode:text-slate-600">${obj.value}${obj.prefix ? '/' + obj.prefix : ''} ${obj.protocol ? '[' + obj.protocol + ']' : ''}</span>`;
-                }
-
-                return `
-                <div class="obj-card border p-5 rounded-2xl flex justify-between items-center ${statusClass}">
-                    <div class="ml-4 flex items-center justify-center">
-                        ${status === 'pending' ? `<input type="checkbox" class="custom-checkbox" onchange="toggleSelection(${obj.id})" ${isChecked}>` : '<div class="w-5 text-slate-700">#</div>'}
-                    </div>
-                    
-                    <div class="grid grid-cols-5 gap-6 flex-1 text-left text-sm items-center">
-                        <div><p class="text-slate-500 text-[10px] mb-1 italic">Requester</p><p class="font-bold text-slate-200 truncate light-mode:text-slate-800">👤 ${obj.requested_by}</p></div>
-                        <div><p class="text-slate-500 text-[10px] mb-1">Type</p><p class="text-indigo-400 font-black text-[11px] tracking-widest">${type}</p></div>
-                        <div><p class="text-slate-500 text-[10px] mb-1">Name</p><p class="font-mono text-purple-300 font-bold truncate text-xs light-mode:text-purple-600" title="${obj.name}">${obj.name}</p></div>
-                        <div class="col-span-1">
-                            <p class="text-slate-500 text-[10px] mb-1">Value / Members</p>
-                            <div class="max-h-12 overflow-y-auto custom-scroll">${displayVal}</div>
-                        </div>
-                        <div class="flex flex-col items-center">
-                            <span class="px-3 py-1 rounded-full border border-current text-[10px] font-bold ${badgeColor}">${statusLabel}</span>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-2 ml-6 min-w-[150px] justify-end">
-                        ${status === 'pending' ? `
-                            <button onclick="openEdit(${obj.id})" class="bg-slate-700 p-2 rounded-xl hover:bg-purple-600 transition-all light-mode:bg-slate-200 light-mode:text-slate-600 light-mode:hover:text-white">📝</button>
-                            <button onclick="openRejectModal(${obj.id})" class="text-rose-400 border border-rose-600/30 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-rose-600 hover:text-white">Reject</button>
-                            <button onclick="selectedObjects.add(${obj.id}); bulkApprove();" class="bg-purple-600 hover:bg-purple-500 text-white px-5 py-1.5 rounded-xl text-xs font-bold shadow-lg">Approve</button>
-                        ` : `
-                            <div class="text-left">
-                                <p class="text-slate-500 text-[9px] uppercase font-bold">Action Date:</p>
-                                <p class="text-[10px] text-slate-400 font-mono light-mode:text-slate-600">${obj.request_time || 'N/A'}</p>
-                            </div>
-                        `}
-                    </div>
-                </div>
-                ${obj.admin_notes ? `
-                    <div class="ml-14 mb-4 mt-1 p-3 bg-indigo-500/5 border-l-2 border-indigo-500/20 rounded-r-xl">
-                        <p class="text-xs text-slate-400 italic light-mode:text-slate-600">💬 Admin Note: ${obj.admin_notes}</p>
-                    </div>` : ''}
-                `;
-            }).join('');
+        // Theme sync
+        function syncTheme() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'light') document.body.classList.add('light-mode');
+            else document.body.classList.remove('light-mode');
         }
+        window.addEventListener('storage', syncTheme);
+        window.addEventListener('message', (event) => {
+            if (event.data === 'theme-toggle' || event.data.type === 'theme-toggle') {
+                document.body.classList.toggle('light-mode');
+            }
+        });
+        syncTheme();
 
-        // רענון אוטומטי כל 30 שניות
-        setInterval(loadObjects, 30000);
+        setInterval(loadObjects, 30000); // Auto-refresh every 30 seconds
     </script>
 </body>
 

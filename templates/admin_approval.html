@@ -3,85 +3,516 @@
 
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <title>Rule Request Queue - NetOps Admin</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
     <style>
-        @font-face {
-            font-family: 'Assistant';
-            src: url("{{ url_for('static', filename='fonts/Assistant-Regular.ttf') }}") format('truetype');
-            font-weight: 400;
+        :root {
+            --bg-primary: #020617;
+            --bg-panel: #0f172a;
+            --bg-input: #1e293b;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-color: #06b6d4;
+            --border-color: #334155;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #fb923c;
         }
 
-        @font-face {
-            font-family: 'Assistant';
-            src: url("{{ url_for('static', filename='fonts/Assistant-Bold.ttf') }}") format('truetype');
-            font-weight: 700;
+        body.light-mode {
+            --bg-primary: #f1f5f9;
+            --bg-panel: #ffffff;
+            --bg-input: #e2e8f0;
+            --bg-card: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Assistant', sans-serif !important;
-            background-color: var(--color-slate-950);
-            color: var(--color-slate-100);
-            padding: 20px;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, sans-serif;
             margin: 0;
+            padding: 20px;
             transition: background-color 0.3s, color 0.3s;
         }
 
-        /* עיצוב שורת לוג וכרטיסים */
+        /* Header */
+        .header {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin: 0 0 0.25rem 0;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin: 0;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        #bulk-toolbar {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            background-color: var(--bg-input);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        #bulk-toolbar.show {
+            display: flex;
+        }
+
+        #selected-count {
+            color: var(--text-main);
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+
+        .divider {
+            height: 32px;
+            width: 1px;
+            background-color: var(--border-color);
+        }
+
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-reject {
+            color: var(--danger-color);
+            background: transparent;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-reject:hover {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-approve {
+            background-color: var(--accent-color);
+            color: #0b1120;
+            box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.2);
+        }
+
+        .btn-approve:hover {
+            background-color: #0891b2;
+        }
+
+        .btn-commit {
+            background-color: var(--success-color);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+            padding: 0.75rem 2rem;
+        }
+
+        .btn-commit:hover {
+            background-color: #059669;
+        }
+
+        .btn-commit:active {
+            transform: scale(0.95);
+        }
+
+        /* Rule Cards */
         .rule-card {
-            transition: all 0.3s ease;
-            border: 1px solid var(--color-slate-700);
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s;
         }
 
-        .rule-approved {
-            border-color: #10b981 !important;
-            background: rgba(16, 185, 129, 0.05) !important;
+        .rule-card.approved {
+            border-color: var(--success-color);
+            background: rgba(16, 185, 129, 0.05);
         }
 
-        .rule-rejected {
-            border-color: #ef4444 !important;
-            background: rgba(239, 68, 68, 0.05) !important;
+        .rule-card.rejected {
+            border-color: var(--danger-color);
+            background: rgba(239, 68, 68, 0.05);
         }
 
+        /* Checkbox */
+        .custom-checkbox {
+            appearance: none;
+            background-color: var(--bg-input);
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--accent-color);
+            border-radius: 4px;
+            cursor: pointer;
+            display: grid;
+            place-content: center;
+            flex-shrink: 0;
+        }
+
+        .custom-checkbox:checked {
+            background-color: var(--accent-color);
+        }
+
+        .custom-checkbox:checked::before {
+            content: "✔";
+            color: #0b1120;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .rule-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 1rem;
+            flex: 1;
+            font-size: 0.875rem;
+        }
+
+        .rule-field {
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            padding-right: 0.75rem;
+        }
+
+        body.light-mode .rule-field {
+            border-right-color: var(--border-color);
+        }
+
+        .rule-field:last-child {
+            border-right: none;
+        }
+
+        .field-label {
+            font-size: 0.625rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+            font-style: italic;
+        }
+
+        .field-value {
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .field-value.name {
+            color: var(--accent-color);
+            font-size: 0.75rem;
+        }
+
+        .field-value.mono {
+            font-family: monospace;
+            font-size: 0.75rem;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.6875rem;
+            font-weight: 800;
+            border: 1px solid;
+            white-space: nowrap;
+        }
+
+        .status-pending {
+            color: var(--warning-color);
+            background: rgba(251, 146, 60, 0.1);
+            border-color: rgba(251, 146, 60, 0.2);
+        }
+
+        .status-approved {
+            color: var(--success-color);
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .status-rejected {
+            color: var(--danger-color);
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .rule-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .btn-icon {
+            background-color: var(--bg-input);
+            border: none;
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.125rem;
+        }
+
+        .btn-icon:hover {
+            background-color: var(--accent-color);
+        }
+
+        .btn-action {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.6875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-action.reject {
+            color: var(--danger-color);
+            background: transparent;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-action.reject:hover {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-action.approve {
+            background-color: var(--success-color);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-action.approve:hover {
+            background-color: #059669;
+        }
+
+        /* Modals */
         .modal {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(8px);
-            background-color: rgba(15, 23, 42, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
             z-index: 100;
         }
 
-        /* Light mode modal BG override via theme.css if class .modal exists there, or vars */
-
-        select,
-        input,
-        textarea {
-            background-color: var(--color-slate-800) !important;
-            color: var(--color-slate-100) !important;
-            border: 1px solid var(--color-slate-700) !important;
-            outline: none;
+        body.light-mode .modal {
+            background-color: rgba(255, 255, 255, 0.8);
         }
 
-        select:focus,
-        input:focus,
-        textarea:focus {
-            border-color: var(--color-indigo-500) !important;
+        .modal.hidden {
+            display: none;
         }
 
-        /* אנימציות */
-        .pop-in {
-            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        .modal-content {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         @keyframes popIn {
-            0% {
+            from {
                 opacity: 0;
                 transform: scale(0.9) translateY(20px);
             }
 
-            100% {
+            to {
                 opacity: 1;
                 transform: scale(1) translateY(0);
             }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header.success {
+            background: rgba(16, 185, 129, 0.1);
+            position: relative;
+        }
+
+        .modal-header.success::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(to right, var(--success-color), #059669);
+        }
+
+        .modal-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 2rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+            color: var(--text-main);
+        }
+
+        .modal-body {
+            padding: 2rem 1.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-field.full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        input,
+        select,
+        textarea {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            padding: 0.625rem 1rem;
+            font-size: 0.875rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--accent-color);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        body.light-mode .modal-footer {
+            background-color: var(--bg-input);
+        }
+
+        .btn-cancel {
+            padding: 0.625rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel:hover {
+            background-color: var(--bg-input);
+            color: var(--text-main);
+        }
+
+        .btn-primary {
+            padding: 0.625rem 2rem;
+            background-color: var(--accent-color);
+            color: #0b1120;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.2);
+        }
+
+        .btn-primary:hover {
+            background-color: #0891b2;
+            transform: scale(1.05);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        .error-text {
+            color: var(--danger-color);
+            font-size: 0.75rem;
+            font-weight: 700;
         }
 
         .shake {
@@ -104,7 +535,7 @@
             }
         }
 
-        /* מערכת Toast פנימית */
+        /* Toast */
         #toast-container {
             position: fixed;
             bottom: 24px;
@@ -118,11 +549,20 @@
         .toast {
             padding: 12px 24px;
             border-radius: 12px;
-            font-weight: bold;
-            font-size: 14px;
+            font-weight: 700;
+            font-size: 0.875rem;
             animation: slideIn 0.3s ease-out;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .toast.success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .toast.error {
+            background-color: var(--danger-color);
             color: white;
         }
 
@@ -137,129 +577,108 @@
                 opacity: 1;
             }
         }
-
-        /* עיצוב צ'קבוקס */
-        .custom-checkbox {
-            appearance: none;
-            background-color: var(--color-slate-800);
-            width: 1.25em;
-            height: 1.25em;
-            border: 2px solid #6366f1;
-            border-radius: 0.25em;
-            cursor: pointer;
-            display: grid;
-            place-content: center;
-        }
-
-        .custom-checkbox:checked {
-            background-color: #6366f1;
-        }
-
-        .custom-checkbox:checked::before {
-            content: "✔";
-            color: white;
-            font-size: 0.7rem;
-        }
     </style>
 </head>
 
 <body>
-
-    <div
-        class="flex justify-between items-center mb-6 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl sticky top-0 z-40">
-        <!-- Manually replace bg-slate-900 with generic classes if possible, or assume theme.css overrides .bg-slate-900 -->
+    <div class="header">
         <div>
-            <h1 class="text-2xl font-bold text-indigo-400">Rule Request Queue</h1>
-            <p class="text-slate-500 text-sm">Approve, edit and track requests</p>
+            <h1>Rule Request Queue</h1>
+            <p>Approve, edit and track requests</p>
         </div>
 
-        <div class="flex gap-4 items-center">
-            <div id="bulk-toolbar"
-                class="hidden items-center gap-3 bg-slate-800 px-4 py-2 rounded-xl border border-slate-700">
-                <span id="selected-count" class="text-white font-bold text-sm ml-2">0 Selected</span>
-                <button onclick="bulkReject()"
-                    class="text-rose-400 border border-rose-600/30 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-rose-600 hover:text-white transition-colors">Reject
-                    Selected</button>
-                <button onclick="bulkApprove()"
-                    class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-lg">Approve
-                    Selected</button>
+        <div class="header-controls">
+            <div id="bulk-toolbar">
+                <span id="selected-count">0 Selected</span>
+                <button onclick="bulkReject()" class="btn btn-reject">Reject Selected</button>
+                <button onclick="bulkApprove()" class="btn btn-approve">Approve Selected</button>
             </div>
-            <div class="h-8 w-px bg-slate-700 mx-2"></div>
-            <button onclick="commitAll()"
-                class="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-95 text-sm">Final
-                COMMIT</button>
+            <div class="divider"></div>
+            <button onclick="commitAll()" class="btn btn-commit">Final COMMIT</button>
         </div>
     </div>
 
-    <div id="pending-container" class="space-y-4 pb-20"></div>
+    <div id="pending-container" style="padding-bottom: 4rem;"></div>
 
-    <div id="confirmModal" class="hidden fixed inset-0 flex items-center justify-center p-4 modal">
-        <div
-            class="bg-slate-900 border border-emerald-500/30 p-8 rounded-3xl w-full max-w-sm shadow-2xl text-center pop-in relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-500 to-green-600"></div>
-            <div class="mx-auto w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-4"><span
-                    class="text-3xl">🛡️</span></div>
-            <h3 class="text-2xl font-bold text-white mb-2">Approve Rules</h3>
-            <p id="confirmMessage" class="text-slate-400 text-sm mb-8 px-4">Rules will be created on the firewall
-                immediately.</p>
-            <div class="flex gap-3 justify-center">
-                <button onclick="closeConfirmModal()"
-                    class="px-6 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800 transition-all font-bold text-sm">Cancel</button>
-                <button onclick="executeBulkApprove()"
-                    class="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold shadow-lg text-sm hover:scale-105 transition-transform">Yes,
-                    Approve Rules</button>
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 500px; text-align: center;">
+            <div class="modal-header success">
+                <div class="modal-icon">🛡️</div>
+                <h3 class="modal-title">Approve Rules</h3>
+                <p id="confirmMessage" style="color: var(--text-muted); font-size: 0.875rem;">Rules will be created on
+                    the firewall immediately.</p>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button onclick="closeConfirmModal()" class="btn-cancel">Cancel</button>
+                <button onclick="executeBulkApprove()" class="btn-primary">Yes, Approve Rules</button>
             </div>
         </div>
     </div>
 
-    <div id="editModal" class="hidden fixed inset-0 flex items-center justify-center modal p-4">
-        <div
-            class="bg-slate-900 border border-slate-700 w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden pop-in">
-            <div class="p-6 border-b border-slate-800 bg-indigo-600/10 flex justify-between items-center">
-                <h2 class="text-xl font-bold text-indigo-400">Edit Rule Details</h2>
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--accent-color);">Edit Rule
+                    Details</h2>
             </div>
-            <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-6" id="editForm">
+            <div class="modal-body">
                 <input type="hidden" id="edit_id">
-                <div class="md:col-span-2 space-y-1"><label class="text-xs text-slate-500 font-bold">Rule
-                        Name</label><input id="edit_rule_name" class="w-full p-2.5 rounded-xl outline-none"></div>
-                <div class="space-y-1"><label class="text-xs text-slate-500 font-bold">From Zone</label><select
-                        id="edit_from_zone" class="w-full p-2.5 rounded-xl"></select></div>
-                <div class="space-y-1"><label class="text-xs text-slate-500 font-bold">To Zone</label><select
-                        id="edit_to_zone" class="w-full p-2.5 rounded-xl"></select></div>
-                <div class="space-y-1"><label class="text-xs text-slate-500 font-bold">Source IP</label><select
-                        id="edit_source_ip" class="w-full p-2.5 rounded-xl"></select></div>
-                <div class="space-y-1"><label class="text-xs text-slate-500 font-bold">Destination IP</label><select
-                        id="edit_destination_ip" class="w-full p-2.5 rounded-xl"></select></div>
-                <div class="space-y-1"><label class="text-xs text-indigo-400 font-bold">Application</label><input
-                        list="modal_app_list" id="edit_app" class="w-full p-2.5 rounded-xl"><datalist
-                        id="modal_app_list"></datalist></div>
-                <div class="space-y-1"><label class="text-xs text-slate-500 font-bold">Service / Port</label><select
-                        id="edit_port" class="w-full p-2.5 rounded-xl"></select></div>
+                <div class="form-grid">
+                    <div class="form-field full">
+                        <label>Rule Name</label>
+                        <input id="edit_rule_name">
+                    </div>
+                    <div class="form-field">
+                        <label>From Zone</label>
+                        <select id="edit_from_zone"></select>
+                    </div>
+                    <div class="form-field">
+                        <label>To Zone</label>
+                        <select id="edit_to_zone"></select>
+                    </div>
+                    <div class="form-field">
+                        <label>Source IP</label>
+                        <select id="edit_source_ip"></select>
+                    </div>
+                    <div class="form-field">
+                        <label>Destination IP</label>
+                        <select id="edit_destination_ip"></select>
+                    </div>
+                    <div class="form-field">
+                        <label style="color: var(--accent-color);">Application</label>
+                        <input list="modal_app_list" id="edit_app">
+                        <datalist id="modal_app_list"></datalist>
+                    </div>
+                    <div class="form-field">
+                        <label>Service / Port</label>
+                        <select id="edit_port"></select>
+                    </div>
+                </div>
             </div>
-            <div class="p-6 bg-slate-900/50 flex justify-end gap-3 border-t border-slate-800">
-                <button onclick="closeEdit()"
-                    class="px-6 py-2 rounded-xl text-slate-400 hover:bg-slate-800 font-bold text-sm">Cancel</button>
-                <button onclick="saveEdit()"
-                    class="px-8 py-2 rounded-xl bg-indigo-600 text-white font-bold shadow-lg text-sm">Save
-                    Update</button>
+            <div class="modal-footer">
+                <button onclick="closeEdit()" class="btn-cancel">Cancel</button>
+                <button onclick="saveEdit()" class="btn-primary">Save Update</button>
             </div>
         </div>
     </div>
 
-    <div id="rejectModal" class="hidden fixed inset-0 flex items-center justify-center p-4 modal">
-        <div class="bg-slate-900 border border-slate-700 p-6 rounded-2xl w-full max-w-md shadow-2xl pop-in">
-            <h3 class="text-xl font-bold text-rose-400 mb-4">Reject Request</h3>
-            <textarea id="rejectReason"
-                class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white mb-4 h-32 outline-none"
-                placeholder="Why is this request being rejected?"></textarea>
-            <div id="reject-error" class="hidden text-rose-500 text-xs mb-4 font-bold">Rejection reason is required
+    <!-- Reject Modal -->
+    <div id="rejectModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--danger-color);">Reject Request
+                </h3>
             </div>
-            <div class="flex justify-end gap-3">
-                <button onclick="closeRejectModal()"
-                    class="text-slate-400 hover:text-white px-4 py-2 font-bold">Cancel</button>
-                <button id="confirmRejectBtn"
-                    class="bg-rose-600 hover:bg-rose-500 text-white px-6 py-2 rounded-xl font-bold transition-all">Confirm
-                    Reject</button>
+            <div class="modal-body">
+                <textarea id="rejectReason" placeholder="Why is this request being rejected?"></textarea>
+                <div id="reject-error" class="error-text hidden" style="margin-top: 0.5rem;">Rejection reason is
+                    required</div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeRejectModal()" class="btn-cancel">Cancel</button>
+                <button id="confirmRejectBtn" class="btn-primary btn-danger">Confirm Reject</button>
             </div>
         </div>
     </div>
@@ -267,16 +686,18 @@
     <div id="toast-container"></div>
 
     <script>
-        let allRules = []; let firewallParams = null; let isFetchingParams = false;
-        let selectedRules = new Set(); let ruleIdToReject = null;
+        let allRules = [];
+        let firewallParams = null;
+        let isFetchingParams = false;
+        let selectedRules = new Set();
+        let ruleIdToReject = null;
 
         window.onload = function () { loadRules(); fetchFirewallParams(); };
 
-        // פונקציית Toast במקום Alert
         function showToast(msg, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = `toast ${type === 'success' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}`;
+            toast.className = `toast ${type}`;
             toast.innerText = msg;
             container.appendChild(toast);
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
@@ -293,69 +714,94 @@
         }
 
         function toggleSelection(id) {
-            if (selectedRules.has(id)) selectedRules.delete(id); else selectedRules.add(id);
+            if (selectedRules.has(id)) selectedRules.delete(id);
+            else selectedRules.add(id);
             updateBulkToolbar();
         }
 
         function updateBulkToolbar() {
             const toolbar = document.getElementById('bulk-toolbar');
             const countSpan = document.getElementById('selected-count');
-            // Check for hidden by class list, or just toggle
             if (selectedRules.size > 0) {
-                toolbar.classList.remove('hidden'); toolbar.classList.add('flex');
+                toolbar.classList.add('show');
                 countSpan.innerText = `${selectedRules.size} Selected`;
             } else {
-                toolbar.classList.add('hidden'); toolbar.classList.remove('flex');
+                toolbar.classList.remove('show');
             }
         }
 
         function renderUI(rules) {
             const container = document.getElementById('pending-container');
-            // Use slate-500 text for empty which is safe
-            if (!rules || rules.length === 0) { container.innerHTML = '<p class="text-slate-500 text-center py-10 italic">No rules to display.</p>'; return; }
+            if (!rules || rules.length === 0) {
+                container.innerHTML = '<p style="text-align: center; padding: 3rem; color: var(--text-muted); font-style: italic;">No rules to display.</p>';
+                return;
+            }
 
             container.innerHTML = rules.map(r => {
                 const isPending = r.status === 'Pending';
-                let statusClass = r.status === 'Approved' ? "rule-approved shadow-[0_0_15px_rgba(16,185,129,0.1)]" : r.status === 'Rejected' ? "rule-rejected" : "border-slate-700";
-                let statusBadge = r.status === 'Approved' ? '<span class="text-emerald-500 text-xs font-bold bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">Approved ✔</span>' : r.status === 'Rejected' ? '<span class="text-rose-500 text-xs font-bold bg-rose-500/10 px-3 py-1 rounded-full border border-rose-500/20">Rejected ✘</span>' : '<span class="text-orange-400 text-xs font-bold bg-orange-400/10 px-3 py-1 rounded-full border border-orange-400/20">Pending ⏳</span>';
+                let cardClass = r.status === 'Approved' ? 'approved' : r.status === 'Rejected' ? 'rejected' : '';
+                let statusBadge = r.status === 'Approved' ? '<span class="status-badge status-approved">Approved ✔</span>' :
+                    r.status === 'Rejected' ? '<span class="status-badge status-rejected">Rejected ✘</span>' :
+                        '<span class="status-badge status-pending">Pending ⏳</span>';
 
-                // For rule card bg, use bg-slate-800/40 which is updated by theme.css
                 return `
-                <div class="rule-card bg-slate-800/40 p-5 rounded-2xl flex justify-between items-center ${statusClass}">
-                    <div class="ml-4 flex items-center justify-center">
-                        ${isPending ? `<input type="checkbox" class="custom-checkbox" onchange="toggleSelection(${r.id})" ${selectedRules.has(r.id) ? 'checked' : ''}>` : '<div class="w-5"></div>'}
+                <div class="rule-card ${cardClass}">
+                    ${isPending ? `<input type="checkbox" class="custom-checkbox" onchange="toggleSelection(${r.id})" ${selectedRules.has(r.id) ? 'checked' : ''}>` : '<div style="width: 20px;"></div>'}
+                    
+                    <div class="rule-grid">
+                        <div class="rule-field">
+                            <p class="field-label">Requester</p>
+                            <p class="field-value">${r.requested_by || 'System'}</p>
+                        </div>
+                        <div class="rule-field">
+                            <p class="field-label">Rule Name</p>
+                            <p class="field-value name">${r.rule_name}</p>
+                        </div>
+                        <div class="rule-field">
+                            <p class="field-label">Source</p>
+                            <p class="field-value mono">${r.source_ip}</p>
+                        </div>
+                        <div class="rule-field">
+                            <p class="field-label">Dest</p>
+                            <p class="field-value mono">${r.destination_ip}</p>
+                        </div>
+                        <div class="rule-field">
+                            <p class="field-label">App/Port</p>
+                            <p class="field-value mono">${r.application} / ${r.service_port}</p>
+                        </div>
+                        <div class="rule-field" style="border-right: none; text-align: center;">
+                            ${statusBadge}
+                        </div>
                     </div>
-                    <div class="grid grid-cols-6 gap-4 flex-1 text-left text-sm items-center">
-                        <div class="border-r border-slate-700/50 pr-2"><p class="text-slate-500 text-[10px] mb-1 italic">Requester</p><p class="font-bold text-slate-200 truncate">${r.requested_by || 'System'}</p></div>
-                        <div><p class="text-slate-500 text-[10px] mb-1">Rule Name</p><p class="text-indigo-400 text-xs font-bold truncate">${r.rule_name}</p></div>
-                        <div><p class="text-slate-500 text-[10px] mb-1">Source</p><p class="text-slate-300 font-mono text-xs">${r.source_ip}</p></div>
-                        <div><p class="text-slate-500 text-[10px] mb-1">Dest</p><p class="text-slate-300 font-mono text-xs">${r.destination_ip}</p></div>
-                        <div><p class="text-slate-500 text-[10px] mb-1">App/Port</p><p class="text-slate-300 font-mono text-xs">${r.application} / ${r.service_port}</p></div>
-                        <div class="flex flex-col items-center gap-1">${statusBadge}</div>
-                    </div>
-                    <div class="flex gap-2 ml-6 min-w-[160px] justify-end">
+                    
+                    <div class="rule-actions">
                         ${isPending ? `
-                            <button onclick="openEdit(${r.id})" class="bg-slate-700 p-2 rounded-xl hover:bg-indigo-600 transition-all text-white" title="Edit">📝</button>
-                            <button onclick="openRejectModal(${r.id})" class="text-rose-400 border border-rose-600/30 px-3 py-2 rounded-xl text-[11px] font-bold hover:bg-rose-600 hover:text-white transition-colors">Reject</button>
-                            <button onclick="handleAction('approve', ${r.id}, false)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-[11px] font-bold shadow-lg shadow-emerald-900/20">Approve</button>
-                        ` : `<p class="text-[10px] text-slate-600 font-mono">${r.request_time || ''}</p>`}
+                            <button onclick="openEdit(${r.id})" class="btn-icon" title="Edit">📝</button>
+                            <button onclick="openRejectModal(${r.id})" class="btn-action reject">Reject</button>
+                            <button onclick="handleAction('approve', ${r.id}, false)" class="btn-action approve">Approve</button>
+                        ` : `<p style="font-size: 0.625rem; color: var(--text-muted); font-family: monospace;">${r.request_time || ''}</p>`}
                     </div>
                 </div>`;
             }).join('');
         }
 
-        // --- Logic Functions ---
         function bulkApprove() {
             if (selectedRules.size === 0) return;
-            document.getElementById('confirmMessage').innerHTML = `Are you sure you want to approve <span class="text-emerald-400 font-bold">${selectedRules.size}</span> rules?`;
+            document.getElementById('confirmMessage').innerHTML = `Are you sure you want to approve <span style="color: var(--success-color); font-weight: 700;">${selectedRules.size}</span> rules?`;
             document.getElementById('confirmModal').classList.remove('hidden');
         }
 
         async function executeBulkApprove() {
             closeConfirmModal();
-            const promises = Array.from(selectedRules).map(id => fetch(`/approve-single-rule/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: "Bulk Approval" }) }));
+            const promises = Array.from(selectedRules).map(id => fetch(`/approve-single-rule/${id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: "Bulk Approval" })
+            }));
             await Promise.all(promises);
-            selectedRules.clear(); updateBulkToolbar(); loadRules();
+            selectedRules.clear();
+            updateBulkToolbar();
+            loadRules();
             showToast("Rules approved successfully");
         }
 
@@ -367,6 +813,7 @@
             document.getElementById('reject-error').classList.add('hidden');
             document.getElementById('rejectModal').classList.remove('hidden');
         }
+
         function closeRejectModal() { document.getElementById('rejectModal').classList.add('hidden'); }
 
         function bulkReject() {
@@ -388,7 +835,6 @@
 
             const ids = ruleIdToReject ? [ruleIdToReject] : Array.from(selectedRules);
 
-            // Execute sequentially or use Promise.all
             for (let id of ids) {
                 await fetch(`/reject-single-rule/${id}`, {
                     method: 'POST',
@@ -407,7 +853,11 @@
         async function handleAction(type, id, commit) {
             const url = type === 'approve' ? `/approve-single-rule/${id}` : `/reject-single-rule/${id}`;
             try {
-                const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: "Manual Admin Action" }) });
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason: "Manual Admin Action" })
+                });
                 const data = await res.json();
                 if (data.status === 'success') {
                     showToast(type === 'approve' ? "Rule approved and created" : "Rule rejected");
@@ -426,7 +876,8 @@
         }
 
         async function openEdit(id) {
-            const r = allRules.find(x => x.id === id); if (!r) return;
+            const r = allRules.find(x => x.id === id);
+            if (!r) return;
             document.getElementById('editModal').classList.remove('hidden');
             document.getElementById('edit_id').value = r.id;
             document.getElementById('edit_rule_name').value = r.rule_name;
@@ -437,12 +888,15 @@
 
         function injectDataToModal(r) {
             const fillSelect = (id, val) => {
-                const el = document.getElementById(id); if (!el) return;
+                const el = document.getElementById(id);
+                if (!el) return;
                 if (![...el.options].some(o => o.value === val)) el.add(new Option(val, val), el.firstChild);
                 el.value = val || "any";
             };
-            fillSelect('edit_from_zone', r.from_zone); fillSelect('edit_to_zone', r.to_zone);
-            fillSelect('edit_source_ip', r.source_ip); fillSelect('edit_destination_ip', r.destination_ip);
+            fillSelect('edit_from_zone', r.from_zone);
+            fillSelect('edit_to_zone', r.to_zone);
+            fillSelect('edit_source_ip', r.source_ip);
+            fillSelect('edit_destination_ip', r.destination_ip);
             fillSelect('edit_port', r.service_port);
         }
 
@@ -459,10 +913,17 @@
                 application: document.getElementById('edit_app').value,
                 service_port: document.getElementById('edit_port').value
             };
-            const res = await fetch(`/update-pending-rule/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            const res = await fetch(`/update-pending-rule/${id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
             const result = await res.json();
-            if (result.status === 'success') { showToast("Successfully updated"); closeEdit(); loadRules(); }
-            else { showToast(result.message, 'error'); }
+            if (result.status === 'success') {
+                showToast("Successfully updated");
+                closeEdit();
+                loadRules();
+            } else { showToast(result.message, 'error'); }
         }
 
         async function fetchFirewallParams() {
@@ -473,14 +934,34 @@
                 const data = await res.json();
                 if (data.status === 'success') {
                     firewallParams = data;
-                    const fill = (id, items) => { const el = document.getElementById(id); if (el) el.innerHTML = items.map(i => `<option value="${i}">${i}</option>`).join(''); };
-                    fill('edit_from_zone', data.zones); fill('edit_to_zone', data.zones);
-                    fill('edit_source_ip', data.addresses); fill('edit_destination_ip', data.addresses);
+                    const fill = (id, items) => {
+                        const el = document.getElementById(id);
+                        if (el) el.innerHTML = items.map(i => `<option value="${i}">${i}</option>`).join('');
+                    };
+                    fill('edit_from_zone', data.zones);
+                    fill('edit_to_zone', data.zones);
+                    fill('edit_source_ip', data.addresses);
+                    fill('edit_destination_ip', data.addresses);
                     fill('edit_port', data.services);
                     document.getElementById('modal_app_list').innerHTML = data.applications.map(a => `<option value="${a}">${a}</option>`).join('');
                 }
-            } catch (e) { console.error(e); } finally { isFetchingParams = false; }
+            } catch (e) { console.error(e); }
+            finally { isFetchingParams = false; }
         }
+
+        // Theme sync
+        function syncTheme() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'light') document.body.classList.add('light-mode');
+            else document.body.classList.remove('light-mode');
+        }
+        window.addEventListener('storage', syncTheme);
+        window.addEventListener('message', (event) => {
+            if (event.data === 'theme-toggle' || event.data.type === 'theme-toggle') {
+                document.body.classList.toggle('light-mode');
+            }
+        });
+        syncTheme();
 
         setInterval(loadRules, 20000);
     </script>

@@ -5,110 +5,215 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NET-OPS | Login</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=2.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 
     <style>
-        /* הגדרת פונט אסיסטנט */
-        @font-face {
-            font-family: 'Assistant';
-            src: url("{{ url_for('static', filename='fonts/Assistant-Regular.ttf') }}") format('truetype');
-            font-weight: 400;
+        :root {
+            --bg-primary: #020617;
+            --bg-panel: #0f172a;
+            --bg-input: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-color: #06b6d4;
+            --accent-hover: #0891b2;
+            --border-color: #334155;
+            --danger-color: #ef4444;
         }
 
-        @font-face {
-            font-family: 'Assistant';
-            src: url("{{ url_for('static', filename='fonts/Assistant-Bold.ttf') }}") format('truetype');
-            font-weight: 700;
+        body.light-mode {
+            --bg-primary: #f1f5f9;
+            --bg-panel: #ffffff;
+            --bg-input: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Assistant', sans-serif !important;
-            background-color: var(--color-slate-950);
-            color: var(--color-slate-100);
+            background: radial-gradient(circle at top right, #0f172a, #020617, #000000);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: background-color 0.3s, color 0.3s;
         }
 
-        /* רקע מדורג מותאם אישית */
-        .bg-custom-gradient {
-            background: radial-gradient(circle at top right, var(--color-slate-900), var(--color-slate-950), #000000) !important;
-        }
-
-        /* Light mode gradient override via theme.css logic (variables swap) or manual override */
-        /* Since we use vars, it might work, but #000000 is hardcoded. */
-        .light-mode .bg-custom-gradient {
-            background: radial-gradient(circle at top right, var(--color-slate-100), var(--color-slate-50), #ffffff) !important;
+        body.light-mode {
+            background: radial-gradient(circle at top right, #f1f5f9, #e2e8f0, #ffffff);
         }
 
         .login-card {
-            background-color: var(--color-slate-900);
-            /* Fallback */
-            background: rgba(var(--color-slate-900-rgb, 15, 23, 42), 0.5);
-            /* Hard to map alpha with vars unless distinct vars */
-            /* Let's just use the variable which swamps plain colors */
-            background-color: var(--color-slate-900);
-            border-color: var(--color-slate-800);
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 3rem 2.5rem;
+            max-width: 440px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
         }
 
-        .light-mode .login-card {
-            background-color: #ffffff;
-            border-color: var(--color-slate-200);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .brand {
+            font-size: 2rem;
+            font-weight: 900;
+            font-style: italic;
+            color: var(--accent-color);
+            letter-spacing: -0.05em;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 1rem 0 0.5rem 0;
+            color: var(--text-main);
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin: 0;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            font-family: monospace;
         }
 
         input {
-            background-color: var(--color-slate-950) !important;
-            border-color: var(--color-slate-800) !important;
-            color: var(--color-slate-100) !important;
+            width: 100%;
+            height: 48px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-main);
+            padding: 0 1rem;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 1px var(--accent-color);
+        }
+
+        input::placeholder {
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            color: var(--danger-color);
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background-color: var(--accent-color);
+            color: #0b1120;
+            border: none;
+            height: 50px;
+            border-radius: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--text-muted);
+            font-size: 0.75rem;
         }
     </style>
 </head>
 
-<body class="bg-custom-gradient min-h-screen flex items-center justify-center p-6">
-
-    <div class="w-full max-w-md login-card backdrop-blur-xl border p-10 rounded-[2.5rem] shadow-2xl">
-        <div class="text-center mb-10">
-            <span class="text-3xl font-black text-indigo-500 italic tracking-tighter">NET-OPS</span>
-            <h1 class="text-xl font-bold mt-4">System Login</h1>
-            <p class="text-slate-500 text-sm mt-2">Authentication via Active Directory</p>
+<body>
+    <div class="login-card">
+        <div class="header">
+            <span class="brand">NET-OPS</span>
+            <h1>System Login</h1>
+            <p>Authentication via Active Directory</p>
         </div>
 
-        <form method="POST" action="/login" class="space-y-6">
-            <div>
-                <label
-                    class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Username</label>
-                <input type="text" name="username" required autofocus
-                    class="w-full rounded-2xl p-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700"
-                    placeholder="Username">
+        <form method="POST" action="/login">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" name="username" required autofocus placeholder="Username">
             </div>
 
-            <div>
-                <label
-                    class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Password</label>
-                <input type="password" name="password" required
-                    class="w-full rounded-2xl p-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700"
-                    placeholder="••••••••">
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" required placeholder="••••••••">
             </div>
 
             {% if error %}
-            <div
-                class="bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm p-4 rounded-xl text-center font-bold">
+            <div class="error-message">
                 {{ error }}
             </div>
             {% endif %}
 
-            <button type="submit"
-                class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-900/20 transition-all transform active:scale-[0.98]">
+            <button type="submit" class="btn-submit">
                 Login Now
             </button>
         </form>
 
-        <div class="mt-8 text-center">
-            <p class="text-slate-600 text-xs">System intended for Network Engineering and InfoSec teams only</p>
+        <div class="footer">
+            <p>System intended for Network Engineering and InfoSec teams only</p>
         </div>
     </div>
 
+    <script>
+        // Theme sync
+        function syncTheme() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'light') document.body.classList.add('light-mode');
+            else document.body.classList.remove('light-mode');
+        }
+        syncTheme();
+    </script>
 </body>
 
 </html>

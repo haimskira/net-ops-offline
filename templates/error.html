@@ -4,64 +4,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Error</title>
-    <!-- Use existing styles if available, or simple inline styles -->
+    <title>Error - NetOps</title>
+
     <style>
+        :root {
+            --bg-primary: #020617;
+            --bg-panel: #0f172a;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-color: #06b6d4;
+            --danger-color: #ef4444;
+            --border-color: #334155;
+        }
+
+        body.light-mode {
+            --bg-primary: #f1f5f9;
+            --bg-panel: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
-            /* Slate 900 */
-            color: #f8fafc;
-            /* Slate 50 */
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .error-container {
-            text-align: center;
-            padding: 2rem;
-            background: rgba(255, 255, 255, 0.05);
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
+            padding: 3rem 2rem;
             max-width: 500px;
             width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .error-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(239, 68, 68, 0.15);
+            border: 2px solid var(--danger-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
         }
 
         h1 {
-            color: #ef4444;
-            /* Red 500 */
-            margin-bottom: 1rem;
+            color: var(--danger-color);
+            margin: 0 0 1rem 0;
+            font-size: 1.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         p {
-            margin-bottom: 2rem;
+            color: var(--text-muted);
+            margin: 0 0 2rem 0;
+            line-height: 1.6;
+            font-size: 1rem;
         }
 
         .btn {
             display: inline-block;
-            padding: 0.75rem 1.5rem;
-            background-color: #3b82f6;
-            /* Blue 500 */
-            color: white;
+            padding: 0.75rem 2rem;
+            background-color: var(--accent-color);
+            color: #0b1120;
             text-decoration: none;
-            border-radius: 6px;
-            transition: background 0.3s;
+            border-radius: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.875rem;
+            transition: all 0.2s;
         }
 
         .btn:hover {
-            background-color: #2563eb;
+            background-color: #0891b2;
+            transform: translateY(-1px);
         }
     </style>
 </head>
 
 <body>
     <div class="error-container">
+        <div class="error-icon">⚠️</div>
         <h1>Error</h1>
-        <p>{{ error_message or "An unexpected error occurred." }}</p>
+        <p>{{ error_message or "An unexpected error occurred. Please try again or contact support." }}</p>
         <a href="/" class="btn">Return to Home</a>
     </div>
 </body>
