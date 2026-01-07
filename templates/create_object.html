@@ -5,36 +5,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Object</title>
+
+    <!-- Choices.js (Local) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/choices.min.css') }}">
+    <script src="{{ url_for('static', filename='js/choices.min.js') }}"></script>
+
     <style>
         /* 
-         * NO EXTERNAL DEPENDENCIES
-         * Design System: Inherited Strict Parity from "Rule Manager"
-         * Core DNA: Deep Navy, Slate, Cyan Accent, Monospace Labels
+         * Design System: "Rule Manager Pro" Inheritance
+         * Preserving ALL Functionality: Multi-select, Validation, Auto-generation
          */
         :root {
-            /* Palette - Dark Mode (Default) */
             --bg-primary: #020617;
-            /* Deepest Navy */
             --bg-panel: #0f172a;
-            /* Panel Navy */
             --bg-input: #1e293b;
-            /* Slate Blue Input */
             --text-main: #f8fafc;
-            /* White-ish */
             --text-muted: #94a3b8;
-            /* Muted Slate */
             --accent-color: #06b6d4;
-            /* Neon Cyan */
             --accent-hover: #0891b2;
             --border-color: #334155;
-            /* Subtle Border */
             --success-color: #10b981;
             --danger-color: #ef4444;
             --input-height: 42px;
             --radius-md: 6px;
         }
 
-        /* Light Mode Variables - Exact Mapping */
         body.light-mode {
             --bg-primary: #f1f5f9;
             --bg-panel: #ffffff;
@@ -55,18 +50,16 @@
             margin: 0;
             padding: 40px;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            transition: background-color 0.3s, color 0.3s;
         }
 
-        /* --- Layout Grid --- */
         .container {
             max-width: 900px;
             margin: 0 auto;
             width: 100%;
         }
 
-        /* --- Header --- */
+        /* Header */
         .header {
             display: flex;
             align-items: center;
@@ -86,12 +79,7 @@
             justify-content: center;
             margin-right: 1.5rem;
             color: var(--accent-color);
-        }
-
-        .header-icon svg {
-            width: 24px;
-            height: 24px;
-            fill: currentColor;
+            font-size: 1.5rem;
         }
 
         .header-info h1 {
@@ -109,16 +97,13 @@
             font-family: monospace;
         }
 
-        /* --- Main Panel (Card) --- */
+        /* Panel */
         .config-panel {
             background-color: var(--bg-panel);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            display: flex;
-            flex-direction: column;
         }
 
-        /* --- Identity Row (Top Section) --- */
         .identity-row {
             padding: 2rem;
             border-bottom: 1px solid var(--border-color);
@@ -128,7 +113,6 @@
             align-items: end;
         }
 
-        /* --- Details Grid (Bottom Section) --- */
         .details-engine {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -136,18 +120,10 @@
             gap: 2rem;
         }
 
-        /* --- Inputs Typography & Spacing --- */
         .input-group {
-            margin-bottom: 1.5rem;
             position: relative;
         }
 
-        /* Remove margin from last child to maintain vertical balance */
-        .input-group:last-child {
-            margin-bottom: 0;
-        }
-
-        /* Fix for Grid Alignment: Override margin for identity row items */
         .identity-row .input-group {
             margin-bottom: 0;
         }
@@ -161,13 +137,10 @@
             color: var(--text-muted);
             margin-bottom: 8px;
             font-family: monospace;
-            /* Technical Vibe */
         }
 
-        /* Unified Input Styling */
         input,
-        textarea,
-        .custom-select {
+        select {
             width: 100%;
             height: var(--input-height);
             background-color: var(--bg-input);
@@ -175,138 +148,83 @@
             border-radius: var(--radius-md);
             color: var(--text-main);
             padding: 0 1rem;
-            font-family: system-ui, monospace;
             font-size: 0.95rem;
-            appearance: none;
             outline: none;
             transition: all 0.2s;
         }
 
-        textarea {
-            height: auto;
-            min-height: 100px;
-            padding: 0.75rem 1rem;
-            resize: vertical;
-        }
-
         input:focus,
-        textarea:focus {
+        select:focus {
             border-color: var(--accent-color);
             box-shadow: 0 0 0 1px var(--accent-color);
         }
 
-        input::placeholder,
-        textarea::placeholder {
+        input::placeholder {
             color: var(--text-muted);
             opacity: 0.5;
         }
 
-        /* --- Custom Dropdowns (Visual Parity with Inputs) --- */
-        select.hidden-native,
-        select.custom-enabled {
-            display: none;
+        input:read-only {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
-        .custom-select {
-            padding: 0;
-            /* Clear padding for inner layout */
-            position: relative;
-            user-select: none;
-            cursor: pointer;
+        /* Choices.js Styling */
+        .choices {
+            margin-bottom: 0;
         }
 
-        .select-trigger {
-            height: 100%;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 1rem;
-            transition: border-color 0.2s;
+        .choices__inner {
+            background-color: var(--bg-input) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: var(--radius-md) !important;
+            min-height: var(--input-height) !important;
+            padding: 6px 12px !important;
         }
 
-        .custom-select:hover {
-            border-color: var(--text-muted);
+        .choices__inner:focus,
+        .choices.is-focused .choices__inner {
+            border-color: var(--accent-color) !important;
         }
 
-        .custom-select.open {
-            border-color: var(--accent-color);
+        .choices__list--dropdown {
+            background-color: var(--bg-input) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: var(--radius-md) !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
         }
 
-        .select-trigger span {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .choices__item {
+            color: var(--text-main) !important;
         }
 
-        .select-arrow {
-            width: 12px;
-            height: 12px;
-            margin-left: 10px;
-            fill: var(--accent-color);
-            opacity: 0.8;
-            transition: transform 0.2s;
+        .choices__item--selectable.is-highlighted {
+            background-color: rgba(6, 182, 212, 0.15) !important;
         }
 
-        .custom-select.open .select-arrow {
-            transform: rotate(180deg);
+        .choices__input {
+            color: var(--text-main) !important;
+            background-color: transparent !important;
         }
 
-        .select-options {
-            position: absolute;
-            top: 105%;
-            left: 0;
-            right: 0;
-            background-color: var(--bg-input);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            z-index: 100;
-            max-height: 250px;
-            overflow-y: auto;
-            display: none;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(6, 182, 212, 0.15);
+        .choices__list--multiple .choices__item {
+            background-color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+            color: #0b1120 !important;
         }
 
-        .custom-select.open .select-options {
-            display: block;
-        }
-
-        .select-option {
-            padding: 10px 1rem;
-            cursor: pointer;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            /* Subtle separator */
-            font-size: 0.9rem;
-        }
-
-        .light-mode .select-option {
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .select-option:hover {
-            background-color: rgba(6, 182, 212, 0.1);
-            color: var(--accent-color);
-        }
-
-        .select-option.selected {
-            color: var(--accent-color);
-            font-weight: bold;
-        }
-
-        /* --- Footer --- */
+        /* Footer */
         .footer {
             padding: 1.5rem 2rem;
             border-top: 1px solid var(--border-color);
             background-color: rgba(0, 0, 0, 0.3);
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             align-items: center;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
         .light-mode .footer {
             background-color: var(--bg-input);
-            border-top-color: var(--border-color);
         }
 
         .btn-submit {
@@ -320,9 +238,6 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
             transition: all 0.2s;
         }
 
@@ -335,13 +250,39 @@
             cursor: not-allowed;
         }
 
-        .btn-submit svg {
-            width: 16px;
-            height: 16px;
-            fill: currentColor;
+        /* Status Messages */
+        .status-msg {
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            animation: slideIn 0.3s ease;
         }
 
-        /* --- Utilities --- */
+        .status-msg.success {
+            color: var(--success-color);
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success-color);
+        }
+
+        .status-msg.error {
+            color: var(--danger-color);
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger-color);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .hidden {
             display: none !important;
         }
@@ -350,27 +291,9 @@
             grid-column: 1 / -1;
         }
 
-        /* Flex row for side-by-side inputs (Protocol + Port) */
-        .flex-row {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .flex-1 {
-            flex: 1;
-        }
-
-        /* Spinner */
-        #loader {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            font-family: monospace;
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .spin-circle {
+        /* Loader */
+        .loader {
+            display: inline-block;
             width: 12px;
             height: 12px;
             border: 2px solid var(--border-color);
@@ -388,337 +311,307 @@
 </head>
 
 <body>
-
     <div class="container">
-        <!-- Header Section -->
         <header class="header">
-            <div class="header-icon">
-                <svg viewBox="0 0 24 24">
-                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                </svg>
-            </div>
+            <div class="header-icon">📦</div>
             <div class="header-info">
                 <h1>Create Object</h1>
                 <p>Define Network & Service Objects</p>
             </div>
-            <div id="loader" class="hidden" style="margin-left: auto;">
-                <div class="spin-circle"></div> CONNECTING...
-            </div>
         </header>
 
-        <!-- Main Config Panel -->
         <div class="config-panel">
-
-            <!-- Identity Section -->
             <div class="identity-row">
                 <div class="input-group">
                     <label>Object Type</label>
-                    <select id="obj_type" class="custom-enabled" onchange="updateUI()">
-                        <option value="address">Address Object</option>
+                    <select id="type" onchange="updateUI()">
+                        <option value="address">Address (IP Host)</option>
                         <option value="address-group">Address Group</option>
-                        <option value="service">Service Object</option>
+                        <option value="service">Service (Port/Protocol)</option>
                         <option value="service-group">Service Group</option>
                     </select>
                 </div>
                 <div class="input-group">
-                    <label>Name</label>
-                    <input type="text" id="obj_name" placeholder="E.g. SRV-WEB-01" autocomplete="off">
+                    <label>Object Name</label>
+                    <input type="text" id="name" placeholder="e.g. SRV_PROD_WEB">
                 </div>
             </div>
 
-            <!-- Details Section -->
             <div class="details-engine">
+                <!-- Single Value Container -->
+                <div class="input-group" id="single-value-container">
+                    <label id="value-label">Value</label>
+                    <input type="text" id="value" placeholder="192.168.1.5/32" oninput="updateServiceName()">
+                </div>
 
-                <!-- Dynamic Input: Subtype / Protocol -->
-                <div class="input-group" id="subtype_group">
-                    <label id="subtype_label">Type / Subtype</label>
+                <!-- Prefix/Protocol Selector -->
+                <div class="input-group" id="modifier-container">
+                    <label id="modifier-label">Prefix</label>
 
-                    <!-- Address Subtypes -->
-                    <select id="addr_type" class="custom-enabled">
-                        <option value="ip-netmask">IP / Netmask (CIDR)</option>
-                        <option value="ip-range">IP Range</option>
-                        <option value="fqdn">FQDN (Domain)</option>
+                    <select id="prefix_container">
+                        <option value="32">/32 (Host)</option>
+                        <option value="24">/24</option>
+                        <option value="16">/16</option>
+                        <option value="8">/8</option>
+                        <option value="0">None</option>
                     </select>
 
-                    <!-- Service Protocol (Hidden by default) -->
-                    <select id="svc_proto" class="custom-enabled hidden-native">
+                    <select id="protocol_container" class="hidden" onchange="updateServiceName()">
                         <option value="tcp">TCP</option>
                         <option value="udp">UDP</option>
-                        <option value="sctp">SCTP</option>
                     </select>
                 </div>
 
-                <!-- Dynamic Input: Value / Members -->
-                <div class="input-group" id="value_group_container">
-                    <label id="value_label">Value</label>
-
-                    <!-- Single Value Input -->
-                    <input type="text" id="obj_value" placeholder="192.168.1.5/32" autocomplete="off">
-
-                    <!-- Members Input (for Groups) -->
-                    <textarea id="obj_members" class="hidden"
-                        placeholder="Enter members, separated by commas...&#10;Ex: Web-Srv-01, DB-Srv-02"></textarea>
-                </div>
-
-                <div class="input-group">
-                    <label>Description</label>
-                    <input type="text" id="obj_desc" placeholder="Optional description..." autocomplete="off">
-                </div>
-
-                <div class="input-group">
-                    <label>Tag</label>
-                    <select id="tag" class="custom-enabled">
-                        <option value="None">None</option>
-                    </select>
+                <!-- Multi-Select Container (for Groups) -->
+                <div class="input-group span-full hidden" id="multi-select-container">
+                    <label>Select Members from System</label>
+                    <select id="members_select" multiple></select>
                 </div>
             </div>
 
-            <!-- Footer Section -->
             <div class="footer">
-                <div id="status-msg" style="margin-right: 1.5rem; font-weight: 700; color: var(--accent-color);"
-                    class="hidden"></div>
-                <button id="submit-btn" class="btn-submit" onclick="submitObject()">
+                <div id="status" class="hidden"></div>
+                <button id="btn" class="btn-submit" onclick="createObj()">
                     CREATE OBJECT
-                    <svg viewBox="0 0 24 24">
-                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                    </svg>
                 </button>
             </div>
         </div>
     </div>
 
     <script>
-        /* --- Pure JS Custom Dropdowns (Matches Rule Manager Logic) --- */
-        function initCustomDropdowns() {
-            document.querySelectorAll('select.custom-enabled').forEach(native => {
-                // Cleanup existing for re-runs
-                if (native.nextElementSibling && native.nextElementSibling.classList.contains('custom-select')) native.nextElementSibling.remove();
+        let multiSelect;
 
-                // Logic to respect 'hidden-native' class or inline style
-                if ((native.style.display === 'none' && !native.classList.contains('hidden-native')) || native.classList.contains('processed')) return;
+        // Validation functions
+        const isValidIPv4 = (ip) => /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip);
+        const isValidHostname = (host) => /^[a-zA-Z0-9][-a-zA-Z0-9.]+[a-zA-Z0-9]$/.test(host);
+        const isValidPortRange = (port) => /^(\d{1,5})(-\d{1,5})?(,\d{1,5}(-\d{1,5})?)*$/.test(port.replace(/\s/g, ''));
 
-                const wrapper = document.createElement('div'); wrapper.className = 'custom-select';
-                // Copy hidden state if native is hidden
-                if (native.classList.contains('hidden')) wrapper.classList.add('hidden');
-
-                const trigger = document.createElement('div'); trigger.className = 'select-trigger';
-                const label = native.options[native.selectedIndex]?.text || "Select...";
-                trigger.innerHTML = `<span>${label}</span><svg class="select-arrow" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>`;
-
-                const options = document.createElement('div'); options.className = 'select-options';
-                Array.from(native.options).forEach(opt => {
-                    if (opt.disabled) return;
-                    const item = document.createElement('div'); item.className = 'select-option';
-                    item.textContent = opt.text; item.dataset.value = opt.value;
-                    if (opt.selected) item.classList.add('selected');
-                    item.onclick = (e) => {
-                        e.stopPropagation();
-                        native.value = opt.value;
-                        native.dispatchEvent(new Event('change'));
-                        trigger.querySelector('span').textContent = opt.text;
-                        wrapper.classList.remove('open');
-                        options.querySelectorAll('.select-option').forEach(el => el.classList.remove('selected'));
-                        item.classList.add('selected');
-                    };
-                    options.appendChild(item);
-                });
-
-                trigger.onclick = (e) => {
-                    e.stopPropagation();
-                    document.querySelectorAll('.custom-select').forEach(c => { if (c !== wrapper) c.classList.remove('open'); });
-                    wrapper.classList.toggle('open');
-                };
-
-                wrapper.appendChild(trigger); wrapper.appendChild(options);
-                native.parentNode.insertBefore(wrapper, native.nextSibling);
-
-                native.style.display = 'none';
-                native.classList.add('processed');
-
-                // Listen for sync changes
-                native.addEventListener('change', () => {
-                    const newLabel = native.options[native.selectedIndex]?.text;
-                    if (newLabel) trigger.querySelector('span').textContent = newLabel;
-                });
-
-                // Sync Visibility: If we toggle native 'hidden', we must toggle wrapper 'hidden'
-                const observer = new MutationObserver((mutations) => {
-                    mutations.forEach(m => {
-                        if (m.type === 'attributes' && (m.attributeName === 'class' || m.attributeName === 'style')) {
-                            if (native.classList.contains('hidden')) wrapper.classList.add('hidden');
-                            else wrapper.classList.remove('hidden');
-                        }
-                    });
-                });
-                observer.observe(native, { attributes: true });
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            const element = document.getElementById('members_select');
+            multiSelect = new Choices(element, {
+                removeItemButton: true,
+                placeholderValue: 'Search existing object...',
+                noChoicesText: 'No data found',
+                itemSelectText: 'Select',
+                searchEnabled: true,
+                shouldSort: false
             });
-        }
 
-        /* --- Global Click Handler for Dropdowns --- */
-        let globalClickHandlerAdded = false;
-        function setupGlobalClickHandler() {
-            if (globalClickHandlerAdded) return;
-            globalClickHandlerAdded = true;
-
-            document.addEventListener('click', (e) => {
-                // Close all dropdowns unless clicking inside a custom-select
-                const clickedInsideDropdown = e.target.closest('.custom-select');
-                if (!clickedInsideDropdown) {
-                    document.querySelectorAll('.custom-select.open').forEach(dropdown => {
-                        dropdown.classList.remove('open');
-                    });
-                }
+            document.getElementById('name').addEventListener('input', (e) => {
+                checkNameAvailability(e.target.value);
             });
-        }
 
-        /* --- Theme Sync Logic --- */
+            syncTheme();
+            updateUI();
+        });
+
+        // Theme sync
         function syncTheme() {
             const theme = localStorage.getItem('theme');
             if (theme === 'light') document.body.classList.add('light-mode');
             else document.body.classList.remove('light-mode');
         }
+
         window.addEventListener('storage', syncTheme);
         window.addEventListener('message', (event) => {
-            if (event.data === 'theme-toggle' || event.data.type === 'theme-toggle') document.body.classList.toggle('light-mode');
-            else if (event.data.type === 'set-theme') {
-                if (event.data.theme === 'light') document.body.classList.add('light-mode');
-                else document.body.classList.remove('light-mode');
+            if (event.data === 'theme-toggle' || event.data.type === 'theme-toggle') {
+                document.body.classList.toggle('light-mode');
             }
         });
-        syncTheme();
 
-        /* --- Init & Data Fetching --- */
-        window.onload = function () {
-            setupGlobalClickHandler();
-            initCustomDropdowns();
-            fetchTags();
-            updateUI(); // Set initial state
-        };
-
-        async function fetchTags() {
-            try {
-                const res = await fetch('/get-params');
-                const data = await res.json();
-                if (data.status === 'success' && data.tags) {
-                    const tagSelect = document.getElementById('tag');
-                    data.tags.forEach(t => tagSelect.add(new Option(t, t)));
-                    // Refresh custom dropdown options
-                    document.querySelectorAll('select.custom-enabled').forEach(el => el.classList.remove('processed'));
-                    document.querySelectorAll('.custom-select').forEach(el => el.remove());
-                    document.querySelectorAll('select.custom-enabled').forEach(el => el.style.display = ''); // Reset display to allow init
-                    initCustomDropdowns();
-                }
-            } catch (e) { }
-        }
-
-        /* --- UI Logic for Type Switching --- */
+        // UI Logic
         function updateUI() {
-            const type = document.getElementById('obj_type').value;
-            const subtypeLabel = document.getElementById('subtype_label');
-            const valueLabel = document.getElementById('value_label');
+            const type = document.getElementById('type').value;
+            const isGroup = type.includes('group');
 
-            const subtypeGroup = document.getElementById('subtype_group');
-            const valueGroupContainer = document.getElementById('value_group_container');
+            const singleContainer = document.getElementById('single-value-container');
+            const modifierContainer = document.getElementById('modifier-container');
+            const multiContainer = document.getElementById('multi-select-container');
 
-            const addrType = document.getElementById('addr_type');
-            const svcProto = document.getElementById('svc_proto');
-            const valueInput = document.getElementById('obj_value');
-            const membersInput = document.getElementById('obj_members');
+            const valueLabel = document.getElementById('value-label');
+            const modifierLabel = document.getElementById('modifier-label');
+            const valueInput = document.getElementById('value');
+            const prefixSelect = document.getElementById('prefix_container');
+            const protocolSelect = document.getElementById('protocol_container');
+            const nameInput = document.getElementById('name');
 
-            // Reset visibilities & layout
-            addrType.classList.add('hidden');
-            svcProto.classList.add('hidden');
-            valueInput.classList.add('hidden');
-            membersInput.classList.add('hidden');
+            // ניקוי אוטומטי - Clear all fields when switching between object types
+            nameInput.value = '';
+            valueInput.value = '';
+            if (multiSelect) {
+                multiSelect.removeActiveItems();
+            }
 
-            // Default Layout: reset to split columns
-            subtypeGroup.classList.remove('hidden');
-            valueGroupContainer.classList.remove('span-full');
+            // Toggle containers
+            singleContainer.classList.toggle('hidden', isGroup);
+            modifierContainer.classList.toggle('hidden', isGroup);
+            multiContainer.classList.toggle('hidden', !isGroup);
 
             if (type === 'address') {
-                subtypeLabel.textContent = "TYPE / SUBTYPE";
-                addrType.classList.remove('hidden');
-
-                valueLabel.textContent = "IP / FQDN VALUE";
-                valueInput.classList.remove('hidden');
-                valueInput.placeholder = "192.168.1.5/32";
-            }
-            else if (type === 'service') {
-                subtypeLabel.textContent = "PROTOCOL";
-                svcProto.classList.remove('hidden');
-
-                valueLabel.textContent = "DESTINATION PORT";
-                valueInput.classList.remove('hidden');
-                valueInput.placeholder = "80, 443, 8080-8090";
-            }
-            else if (type.includes('group')) {
-                // Group Mode: Hide Subtype column, expand Value column to full width
-                subtypeGroup.classList.add('hidden');
-                valueGroupContainer.classList.add('span-full');
-
-                valueLabel.textContent = "GROUP MEMBERS";
-                membersInput.classList.remove('hidden');
+                valueLabel.textContent = "IP Address or Hostname";
+                modifierLabel.textContent = "Prefix";
+                valueInput.placeholder = "192.168.1.5";
+                prefixSelect.classList.remove('hidden');
+                protocolSelect.classList.add('hidden');
+                nameInput.readOnly = false;
+                nameInput.placeholder = "e.g. web-server-01";
+            } else if (type === 'service') {
+                valueLabel.textContent = "Ports";
+                modifierLabel.textContent = "Protocol";
+                valueInput.placeholder = "80,443";
+                prefixSelect.classList.add('hidden');
+                protocolSelect.classList.remove('hidden');
+                updateServiceName();
+            } else if (isGroup) {
+                const endpoint = type === 'address-group' ? '/get-address-objects' : '/get-service-objects';
+                const key = type === 'address-group' ? 'addresses' : 'services';
+                loadChoices(endpoint, key);
+                nameInput.readOnly = false;
+                nameInput.placeholder = "e.g. WEB-SERVERS-GROUP";
             }
         }
 
-        /* --- Form Submission (Logic) --- */
-        async function submitObject() {
-            const btn = document.getElementById('submit-btn');
-            const status = document.getElementById('status-msg');
-            const type = document.getElementById('obj_type').value;
+        function updateServiceName() {
+            const type = document.getElementById('type').value;
+            if (type !== 'service') return;
 
-            const data = {
-                type: type,
-                name: document.getElementById('obj_name').value,
-                description: document.getElementById('obj_desc').value,
-                tag: document.getElementById('tag').value,
+            const nameInput = document.getElementById('name');
+            const proto = document.getElementById('protocol_container').value.toUpperCase();
+            const val = document.getElementById('value').value.trim().replace(/\s/g, '');
+
+            if (val) {
+                nameInput.value = `${proto}_${val}`;
+                nameInput.readOnly = true;
+                nameInput.placeholder = "Auto-generated...";
+            } else {
+                nameInput.value = "";
+                nameInput.placeholder = "Enter Port to generate name...";
+            }
+            checkNameAvailability(nameInput.value);
+        }
+
+        // Name validation
+        let debounceTimer;
+        async function checkNameAvailability(name) {
+            const status = document.getElementById('status');
+            const btn = document.getElementById('btn');
+
+            if (!name || name.trim() === '') return;
+
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch('/check-object-name', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: name })
+                    });
+                    const data = await res.json();
+
+                    if (data.exists) {
+                        showStatus(`Object '${name}' already exists (${data.type})`, false);
+                        btn.disabled = true;
+                    } else {
+                        if (status.textContent.includes("already exists")) {
+                            status.classList.add('hidden');
+                            btn.disabled = false;
+                        }
+                    }
+                } catch (e) {
+                    console.error("Check name error", e);
+                }
+            }, 500);
+        }
+
+        // Load choices for groups
+        async function loadChoices(url, dataKey) {
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const items = data[dataKey].map(name => ({ value: name, label: name }));
+                    multiSelect.clearChoices();
+                    multiSelect.setChoices(items, 'value', 'label', true);
+                }
+            } catch (e) {
+                console.error("Load Error", e);
+            }
+        }
+
+        // Form reset
+        function resetForm() {
+            document.getElementById('name').value = '';
+            document.getElementById('value').value = '';
+            if (multiSelect) {
+                multiSelect.removeActiveItems();
+            }
+        }
+
+        // Status display
+        function showStatus(msg, isSuccess) {
+            const status = document.getElementById('status');
+            status.textContent = msg;
+            status.className = `status-msg ${isSuccess ? 'success' : 'error'}`;
+            status.classList.remove('hidden');
+            if (isSuccess) setTimeout(() => status.classList.add('hidden'), 5000);
+        }
+
+        // Submit
+        async function createObj() {
+            const btn = document.getElementById('btn');
+            const type = document.getElementById('type').value;
+            const name = document.getElementById('name').value.trim();
+            let value;
+
+            if (!name) return showStatus("Object name is required", false);
+
+            if (type.includes('group')) {
+                const selected = multiSelect.getValue(true);
+                if (selected.length === 0) return showStatus("Group cannot be empty", false);
+                value = selected.join(',');
+            } else {
+                value = document.getElementById('value').value.trim();
+                if (!value) return showStatus("Value is required", false);
+
+                if (type === 'address') {
+                    if (!isValidIPv4(value) && !isValidHostname(value)) {
+                        return showStatus("Invalid IP address or Hostname", false);
+                    }
+                }
+                if (type === 'service' && !isValidPortRange(value)) {
+                    return showStatus("Invalid port format", false);
+                }
+            }
+
+            const payload = {
+                type, name, value,
+                prefix: type === 'address' ? document.getElementById('prefix_container').value : null,
+                protocol: type === 'service' ? document.getElementById('protocol_container').value : null
             };
 
-            // Dynamic Data Collection
-            if (type === 'address') {
-                data.value = document.getElementById('obj_value').value;
-                data.subtype = document.getElementById('addr_type').value;
-            } else if (type === 'service') {
-                data.value = document.getElementById('obj_value').value; // Ports
-                data.protocol = document.getElementById('svc_proto').value;
-            } else if (type.includes('group')) {
-                // Parse members from CSV
-                const membersRaw = document.getElementById('obj_members').value;
-                // Convert to comma-sep string for backend if it expects that, or array?
-                // Rule Manager backend usually takes string values or arrays? 
-                // Creating a Request -> usually 'value' field string.
-                data.value = membersRaw.split(/[\n,]+/).map(s => s.trim()).filter(s => s).join(',');
-            }
-
-            // Validation
-            if (!data.name || !data.value) {
-                alert("Please fill Name and Value/Members");
-                return;
-            }
-
-            status.textContent = "CREATING...";
-            status.classList.remove('hidden');
-            status.style.color = 'var(--text-muted)';
             btn.disabled = true;
+            btn.textContent = "PROCESSING...";
 
             try {
                 const res = await fetch('/create-object', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 });
-                const r = await res.json();
+                const data = await res.json();
 
-                status.textContent = r.message.toUpperCase();
-                status.style.color = (r.status === 'success') ? 'var(--success-color)' : 'var(--danger-color)';
-
-                if (r.status === 'success') {
-                    setTimeout(() => location.reload(), 2000);
+                if (data.status === 'success') {
+                    showStatus(data.message, true);
+                    resetForm();
                 } else {
-                    btn.disabled = false;
+                    showStatus(data.message || "Server error", false);
                 }
             } catch (e) {
-                status.textContent = "COMMUNICATION ERROR: " + e;
-                status.style.color = 'var(--danger-color)';
+                showStatus("Communication error", false);
+            } finally {
                 btn.disabled = false;
+                btn.textContent = "CREATE OBJECT";
             }
         }
     </script>
