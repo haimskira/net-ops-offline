@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+    <style>
+        @font-face {
+            font-family: 'Assistant';
+            src: url("{{ url_for('static', filename='fonts/Assistant-Regular.ttf') }}") format('truetype');
+            font-weight: 400;
+        }
+
+        @font-face {
+            font-family: 'Assistant';
+            src: url("{{ url_for('static', filename='fonts/Assistant-Bold.ttf') }}") format('truetype');
+            font-weight: 700;
+        }
+
+        body {
+            font-family: 'Assistant', sans-serif !important;
+            background-color: var(--color-slate-950);
+            color: var(--color-slate-100);
+            margin: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .spinner-custom {
+            border-top-color: transparent !important;
+            animation: rot 1s linear infinite;
+        }
+
+        @keyframes rot {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        input,
+        select {
+            background-color: var(--color-slate-800) !important;
+            border: 1px solid var(--color-slate-700) !important;
+            color: var(--color-slate-100) !important;
+            transition: all 0.2s ease-in-out;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--color-indigo-500) !important;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+            outline: none;
+        }
+
+        .result-card {
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .glass-panel-custom {
+            background-color: var(--color-slate-900);
+            border-color: var(--color-slate-700);
+            background: rgba(var(--color-slate-900-rgb), 0.4);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Fallback for bg colors in js injected html, if any */
+    </style>
+</head>
+
+<body class="p-6 overflow-x-hidden">
+    <!-- Updated container classes to use variables or generic classes -->
+    <div class="max-w-3xl mx-auto glass-panel-custom border rounded-3xl p-8 shadow-2xl backdrop-blur-md">
+
+        <div class="flex items-center justify-between mb-8 border-b border-slate-700 pb-5">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-500/20 text-indigo-400 p-2 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.15)]">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-indigo-100 tracking-tight">Security Policy Match Tester</h2>
+            </div>
+
+            <div id="loading-indicator"
+                class="flex items-center gap-3 bg-slate-900/80 px-4 py-2 rounded-full border border-indigo-500/30">
+                <div class="spinner-custom w-4 h-4 border-2 border-indigo-400 rounded-full"></div>
+                <span class="text-xs font-medium text-slate-300">Loading firewall data...</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+                <label class="block text-sm font-bold text-slate-400 mr-1">From Zone</label>
+                <select id="from_zone" class="w-full p-3 rounded-xl outline-none"></select>
+            </div>
+            <div class="space-y-2">
+                <label class="block text-sm font-bold text-slate-400 mr-1">To Zone</label>
+                <select id="to_zone" class="w-full p-3 rounded-xl outline-none"></select>
+            </div>
+            <div class="space-y-2">
+                <label class="block text-sm font-bold text-slate-400 mr-1">Source IP</label>
+                <input type="text" id="source_ip" placeholder="e.g. 10.0.0.1"
+                    class="w-full p-3 rounded-xl outline-none">
+            </div>
+            <div class="space-y-2">
+                <label class="block text-sm font-bold text-slate-400 mr-1">Destination IP</label>
+                <input type="text" id="destination_ip" placeholder="e.g. 8.8.8.8"
+                    class="w-full p-3 rounded-xl outline-none">
+            </div>
+            <div class="space-y-2">
+                <label class="block text-sm font-bold text-slate-400 mr-1">Protocol</label>
+                <select id="protocol" class="w-full p-3 rounded-xl outline-none">
+                    <option value="6">TCP (6)</option>
+                    <option value="17">UDP (17)</option>
+                    <option value="1">ICMP (1)</option>
+                </select>
+            </div>
+            <div class="space-y-2">
+                <label class="block text-sm font-bold text-slate-400 mr-1">Destination Port</label>
+                <input type="text" id="port" value="443" class="w-full p-3 rounded-xl outline-none">
+            </div>
+        </div>
+
+        <button id="run-btn" onclick="runMatch()"
+            class="w-full mt-10 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-900/20 transition-all transform active:scale-[0.97] flex items-center justify-center gap-2">
+            <span>Run Diagnostic Match</span>
+        </button>
+
+        <div id="result-box" class="mt-8 hidden p-6 rounded-2xl border transition-all result-card">
+            <h3 class="text-xl font-bold mb-4 flex items-center gap-2" id="res-header"></h3>
+            <div id="res-content" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-left"></div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * JSDoc: טוען את האזורים ומוסיף אופציית "ללא אזור" לסימולציה גמישה.
+         */
+        async function loadZones() {
+            const loader = document.getElementById('loading-indicator');
+            try {
+                const res = await fetch('/get-params');
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    const fromEl = document.getElementById('from_zone');
+                    const toEl = document.getElementById('to_zone');
+
+                    // איפוס והוספת אופציית ברירת מחדל ריקה (תשלח כ-"" לשרת)
+                    fromEl.innerHTML = '<option value="">-- Without Zone (Optional) --</option>';
+                    toEl.innerHTML = '<option value="">-- Without Zone (Optional) --</option>';
+
+                    // סינון any והוספת האזורים האמיתיים
+                    data.zones
+                        .filter(z => z.toLowerCase() !== 'any')
+                        .forEach(z => {
+                            fromEl.add(new Option(z, z));
+                            toEl.add(new Option(z, z));
+                        });
+
+                    loader.classList.add('hidden');
+                }
+            } catch (e) {
+                console.error("Error loading zones:", e);
+            }
+        }
+
+        /**
+         * JSDoc: מבצע את הרצת הדיאגנוסטיקה מול ה-Backend ומציג תוצאות.
+         * מטפל במניעת undefined על ידי שימוש ב-Payload המקורי כ-fallback.
+         */
+        async function runMatch() {
+            const btn = document.getElementById('run-btn');
+            const resultBox = document.getElementById('result-box');
+            const header = document.getElementById('res-header');
+            const content = document.getElementById('res-content');
+
+            // הכנת ה-UI
+            btn.disabled = true;
+            btn.innerHTML = `<div class="spinner-custom w-5 h-5 border-2 border-white rounded-full"></div> Checking rule...`;
+            resultBox.classList.add('hidden');
+
+            const payload = {
+                from_zone: document.getElementById('from_zone').value.trim(),
+                to_zone: document.getElementById('to_zone').value.trim(),
+                source_ip: document.getElementById('source_ip').value.trim(),
+                destination_ip: document.getElementById('destination_ip').value.trim(),
+                protocol: document.getElementById('protocol').value,
+                port: document.getElementById('port').value.trim()
+            };
+
+            // ולידציה בסיסית
+            if (!payload.source_ip || !payload.destination_ip) {
+                alert("Please enter valid IP addresses");
+                btn.disabled = false;
+                btn.innerText = "Run Diagnostic Match";
+                return;
+            }
+
+            try {
+                const res = await fetch('/run-policy-match', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.message || "Execution error");
+
+                resultBox.classList.remove('hidden');
+
+                if (data.status === 'success' && data.match) {
+                    // עיצוב הצלחה (Match Found)
+                    // Use style classes that interact with vars if possible, but color overrides are fine
+                    resultBox.className = "mt-8 p-6 rounded-2xl border-emerald-500/30 bg-emerald-500/10 shadow-[0_0_30px_rgba(16,185,129,0.1)] block result-card";
+                    header.className = "text-xl font-bold mb-4 text-emerald-400";
+                    header.innerHTML = `<span>✅</span> Result: Match Found`;
+
+                    // מניעת undefined: שימוש בנתוני ה-Payload אם ה-Backend לא החזיר שדות אלו
+                    const srcDisplay = data.source || payload.source_ip;
+                    const dstDisplay = data.destination || payload.destination_ip;
+                    const action = (data.action || "allow").toUpperCase();
+
+                    content.innerHTML = `
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
+                        <strong class="text-slate-500 block text-xs uppercase mb-1">Rule Name</strong> 
+                        <span class="text-indigo-400 font-bold">${data.rule_name}</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
+                        <strong class="text-slate-500 block text-xs uppercase mb-1">Action</strong> 
+                        <span class="${action === 'ALLOW' ? 'text-emerald-400' : 'text-rose-400'} font-bold">${action}</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
+                        <strong class="text-slate-500 block text-xs uppercase mb-1">Source</strong> 
+                        <span class="text-slate-200">${srcDisplay}</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
+                        <strong class="text-slate-500 block text-xs uppercase mb-1">Destination</strong> 
+                        <span class="text-slate-200">${dstDisplay}</span>
+                    </div>
+                `;
+                } else {
+                    // עיצוב חוסר התאמה (No Match)
+                    resultBox.className = "mt-8 p-6 rounded-2xl border-rose-500/30 bg-rose-500/10 shadow-[0_0_30px_rgba(244,63,94,0.1)] block result-card";
+                    header.className = "text-xl font-bold mb-4 text-rose-400 text-center";
+                    header.innerHTML = `<span>❌</span> No Match Found`;
+                    content.innerHTML = `<p class="col-span-2 text-slate-400 p-2 text-center">Traffic does not match any existing security rule. It will be blocked by Implicit Deny.</p>`;
+                }
+            } catch (e) {
+                alert("Error: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Run Diagnostic Match";
+            }
+        }
+
+        // הפעלה בטעינת הדף
+        window.onload = loadZones;
+    </script>
+</body>
+
+</html>

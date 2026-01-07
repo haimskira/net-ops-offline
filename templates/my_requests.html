@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>NetOps - My Rule Requests</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+    <style>
+        @font-face {
+            font-family: 'Assistant';
+            src: url("{{ url_for('static', filename='fonts/Assistant-Regular.ttf') }}") format('truetype');
+            font-weight: 400;
+        }
+
+        @font-face {
+            font-family: 'Assistant';
+            src: url("{{ url_for('static', filename='fonts/Assistant-Bold.ttf') }}") format('truetype');
+            font-weight: 700;
+        }
+
+        body {
+            font-family: 'Assistant', sans-serif !important;
+            background-color: var(--color-slate-950);
+            color: var(--color-slate-100);
+            padding: 20px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .light-mode .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .status-pending {
+            color: #fbbf24;
+            background: rgba(251, 191, 36, 0.1);
+            border-color: rgba(251, 191, 36, 0.2);
+        }
+
+        .status-approved {
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .status-rejected {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .admin-note-box {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(99, 102, 241, 0.05);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 12px;
+        }
+
+        .light-mode .admin-note-box {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="max-w-5xl mx-auto">
+        <div
+            class="flex justify-between items-center mb-8 glass-card p-6 rounded-3xl border border-slate-700/50 shadow-2xl light-mode:border-slate-300">
+            <div>
+                <h1 class="text-2xl font-bold text-indigo-400 flex items-center gap-2">
+                    <span>📜</span> My Request Queue (Rules)
+                </h1>
+                <p class="text-slate-500 text-sm mt-1 italic">Real-time firewall rule approval status</p>
+            </div>
+            <button onclick="loadRequests()"
+                class="bg-slate-800 p-3 rounded-full hover:bg-slate-700 transition-all shadow-lg light-mode:bg-slate-200 light-mode:hover:bg-slate-300 text-white light-mode:text-slate-700"
+                title="Refresh Data">
+                🔄
+            </button>
+        </div>
+
+        <div id="requests-list" class="space-y-4">
+            <div class="text-center py-20 opacity-50">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500 mb-4"></div>
+                <p class="text-sm">Fetching server data...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * טעינת בקשות החוקה מהשרת.
+         */
+        async function loadRequests() {
+            try {
+                // הוספת timestamp למניעת Cache
+                const res = await fetch(`/get-my-requests?t=${Date.now()}`);
+                const data = await res.json();
+                const container = document.getElementById('requests-list');
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-20 border-2 border-dashed border-slate-800 rounded-3xl light-mode:border-slate-300">
+                            <p class="text-slate-500 italic">No rule requests associated with you found.</p>
+                            <button onclick="window.parent.toggleComponent('palo-alto')" 
+                                    class="mt-4 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 px-6 py-2 rounded-xl font-bold transition-all border border-indigo-500/30">
+                                Create New Rule Now ➔
+                            </button>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = data.map(r => {
+                    const status = (r.status || 'Pending').toLowerCase();
+                    const sClass = `status-${status}`;
+                    let sText = "Pending Review";
+                    let icon = "⏳";
+
+                    if (status === 'approved') { sText = "Done in Firewall"; icon = "✅"; }
+                    else if (status === 'rejected') { sText = "Rejected"; icon = "❌"; }
+
+                    return `
+                        <div class="glass-card p-6 rounded-2xl transition-all hover:bg-slate-800/40 border border-slate-700/30 light-mode:hover:bg-white/50 light-mode:border-slate-300">
+                            <div class="flex justify-between items-start">
+                                <div class="flex items-start gap-4">
+                                    <span class="text-3xl mt-1">${icon}</span>
+                                    <div>
+                                        <p class="font-bold text-slate-100 text-lg mb-1 light-mode:text-slate-800">${r.rule_name}</p>
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-1">
+                                            <p class="text-xs text-slate-400 font-mono light-mode:text-slate-600">
+                                                <span class="text-indigo-400 font-bold">SOURCE:</span> ${r.source_ip || r.source}
+                                            </p>
+                                            <p class="text-xs text-slate-400 font-mono light-mode:text-slate-600">
+                                                <span class="text-indigo-400 font-bold">DEST:</span> ${r.destination_ip || r.destination}
+                                            </p>
+                                            <p class="text-xs text-slate-300 font-bold light-mode:text-slate-600">
+                                                <span class="text-indigo-400 font-bold">PORT:</span> ${r.service_port}/${r.protocol || 'tcp'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right flex flex-col items-end">
+                                    <span class="status-pill ${sClass}">
+                                        ${sText}
+                                    </span>
+                                    <p class="text-[10px] text-slate-500 mt-4 font-mono">${r.time || ''}</p>
+                                </div>
+                            </div>
+
+                            ${r.admin_notes ? `
+                                <div class="admin-note-box flex gap-3 items-start">
+                                    <span class="text-xs">💬</span>
+                                    <div>
+                                        <p class="text-[10px] text-indigo-400 font-bold uppercase">Admin Note</p>
+                                        <p class="text-sm text-slate-300 italic leading-relaxed light-mode:text-slate-700">${r.admin_notes}</p>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error("Error loading requests:", e);
+                document.getElementById('requests-list').innerHTML =
+                    '<div class="p-6 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-center font-bold">⚠️ Communication Error with Management Server</div>';
+            }
+        }
+
+        loadRequests();
+        setInterval(loadRequests, 15000); // רענון כל 15 שניות
+    </script>
+</body>
+
+</html>

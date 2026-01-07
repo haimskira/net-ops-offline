@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Policy Inventory Pro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <style>
+        @font-face {
+            font-family: 'Assistant';
+            src: url("{{ url_for('static', filename='fonts/Assistant-Regular.ttf') }}") format('truetype');
+            font-weight: 400;
+        }
+
+        body {
+            font-family: 'Assistant', sans-serif;
+            background-color: var(--color-slate-950);
+            color: var(--color-slate-100);
+            padding: 20px;
+            overflow: hidden;
+            margin: 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            height: calc(100vh - 120px);
+            display: flex;
+            flex-direction: column;
+            border-radius: 20px;
+        }
+
+        .light-mode .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .table-container {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            text-align: left;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: var(--color-slate-950);
+            padding: 12px;
+            border-bottom: 2px solid var(--color-slate-800);
+            color: var(--color-slate-400);
+            font-size: 11px;
+        }
+
+        .filter-input {
+            background: var(--color-slate-900);
+            border: 1px solid var(--color-slate-800);
+            color: var(--color-slate-100);
+            font-size: 11px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            width: 100%;
+            outline: none;
+        }
+
+        .filter-input:focus {
+            border-color: #6366f1;
+        }
+
+        /* --- Tooltip System --- */
+        .obj-tag {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            background: var(--color-slate-900);
+            padding: 4px 10px;
+            border-radius: 8px;
+            margin: 2px;
+            border-right: 4px solid #475569;
+            cursor: help;
+        }
+
+        .obj-tag::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4f46e5;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: pre-wrap;
+            width: max-content;
+            max-width: 250px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s;
+            z-index: 100;
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .obj-tag:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Color Coding */
+        .obj-group {
+            border-right-color: #6366f1;
+        }
+
+        /* Group: Blue */
+        .obj-host {
+            border-right-color: #10b981;
+        }
+
+        /* Host: Green */
+        .obj-app {
+            border-right-color: #a855f7;
+        }
+
+        /* App: Purple */
+
+        .obj-name {
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--color-slate-200);
+        }
+
+        .badge-allow {
+            color: #10b981;
+            border: 1px solid #10b981;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge-deny {
+            color: #ef4444;
+            border: 1px solid #ef4444;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        /* Table Row Styling */
+        tr:hover td {
+            background-color: var(--color-slate-900) !important;
+        }
+
+        /* Custom Scrollbar for Container */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-slate-700);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        /* Semantic Classes for JS */
+        .table-text {
+            color: var(--color-slate-400);
+        }
+    </style>
+</head>
+
+<body class="flex flex-col h-screen">
+
+    <div class="mb-6 flex justify-between items-end shrink-0">
+        <div>
+            <h1 class="text-2xl font-bold text-indigo-400 italic">Firewall Policy Viewer</h1>
+            <p class="text-slate-500 text-sm">Policy Display</p>
+        </div>
+        <div class="flex gap-3">
+            <span id="row-count"
+                class="bg-slate-800 text-slate-400 px-4 py-2 rounded-xl text-xs font-bold border border-slate-700">0
+                Rules</span>
+            <button onclick="loadPolicies()"
+                class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all">Refresh
+                View 👁️</button>
+            <button id="sync-btn" onclick="triggerDeepSync()"
+                class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-lg transition-all">Full
+                Firewall Sync 🔄</button>
+        </div>
+    </div>
+
+    <div class="glass-panel overflow-hidden shadow-2xl">
+        <div class="table-container custom-scroll">
+            <table id="policyTable">
+                <thead>
+                    <tr>
+                        <th class="w-1/6">Rule Name</th>
+                        <th class="w-24">From</th>
+                        <th class="w-24">To</th>
+                        <th>Source Objects</th>
+                        <th>Dest Objects</th>
+                        <th>Service</th>
+                        <th>Application</th>
+                        <th class="w-20">Action</th>
+                    </tr>
+                    <tr class="bg-slate-900/50 light-mode:bg-slate-100/50">
+                        <th><input type="text" class="filter-input" data-col="name" placeholder="Name..."></th>
+                        <th><input type="text" class="filter-input" data-col="from" placeholder="Zone..."></th>
+                        <th><input type="text" class="filter-input" data-col="to" placeholder="Zone..."></th>
+                        <th><input type="text" class="filter-input" data-col="sources" placeholder="IP or Name..."></th>
+                        <th><input type="text" class="filter-input" data-col="destinations" placeholder="IP or Name...">
+                        </th>
+                        <th><input type="text" class="filter-input" data-col="services" placeholder="Port..."></th>
+                        <th><input type="text" class="filter-input" data-col="applications" placeholder="App...">
+                        </th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="policy-body" class="divide-y divide-slate-800/50 light-mode:divide-slate-200/50">
+                    <tr>
+                        <td colspan="8" class="p-20 text-center text-slate-500 italic">Loading data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * מפעיל סנכרון עמוק מול ה-API של הפיירוול.
+         */
+        async function triggerDeepSync() {
+            const btn = document.getElementById('sync-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "Syncing... ⏳";
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/sync/firewall', { method: 'POST' });
+                const data = await res.json();
+                alert(data.message);
+                loadPolicies();
+            } catch (e) {
+                alert("Sync Error: Check Firewall Connection");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        let allPolicies = [];
+
+        /**
+         * טוען את החוקים מה-Database המקומי.
+         */
+        async function loadPolicies() {
+            const body = document.getElementById('policy-body');
+            body.innerHTML = '<tr><td colspan="8" class="p-20 text-center text-indigo-400 animate-pulse italic">Loading from DB...</td></tr>';
+            try {
+                const res = await fetch(`/get-all-policies?t=${Date.now()}`);
+                allPolicies = await res.json();
+                renderTable(allPolicies);
+            } catch (e) { console.error("Load Error:", e); }
+        }
+
+        /**
+         * מרנדר את טבלת החוקים לתוך ה-DOM.
+         */
+        function renderTable(policies) {
+            const body = document.getElementById('policy-body');
+            document.getElementById('row-count').innerText = `${policies.length} Rules`;
+
+            if (policies.length === 0) {
+                body.innerHTML = '<tr><td colspan="8" class="p-20 text-center text-slate-500">No matching rules found</td></tr>';
+                return;
+            }
+
+            body.innerHTML = policies.map(p => {
+                const actionClass = (p.action && p.action.toLowerCase() === 'allow') ? 'badge-allow' : 'badge-deny';
+
+                return `
+                    <tr class="transition-colors">
+                        <td class="p-4 font-bold text-indigo-300 truncate max-w-xs">${p.name}</td>
+                        <td class="p-4 table-text">${p.from}</td>
+                        <td class="p-4 table-text">${p.to}</td>
+                        <td class="p-2">${renderTags(p.sources)}</td>
+                        <td class="p-2">${renderTags(p.destinations)}</td>
+                        <td class="p-2">${renderTags(p.services, true)}</td>
+                        <td class="p-2">${renderTags(p.applications, false, 'app')}</td>
+                        <td class="p-4 text-center"><span class="${actionClass}">${p.action}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        /**
+         * מייצר תגיות ויזואליות לאובייקטים (עם Tooltip).
+         */
+        function renderTags(objs, isSvc = false, forceType = null) {
+            if (!objs || objs.length === 0) return `<span class="text-slate-600 text-xs italic">any</span>`;
+
+            return `<div class="flex flex-wrap gap-1">` + objs.map(o => {
+                let typeClass = o.is_group ? 'obj-group' : 'obj-host';
+                if (forceType === 'app') typeClass = 'obj-app';
+
+                const tooltipText = o.value || 'Info unavailable';
+                return `<div class="obj-tag ${typeClass}" title="${tooltipText}" data-tooltip="Content: ${tooltipText}"><span class="obj-name">${o.name}</span></div>`;
+            }).join('') + `</div>`;
+        }
+
+        /**
+         * פילטר דינמי לטבלה (Client-side).
+         */
+        function applyFilters() {
+            const inputs = Array.from(document.querySelectorAll('.filter-input'));
+            const filtered = allPolicies.filter(p => {
+                return inputs.every(input => {
+                    const val = input.value.toLowerCase().trim();
+                    if (!val) return true;
+                    const col = input.dataset.col;
+
+                    if (Array.isArray(p[col])) {
+                        return p[col].some(o =>
+                            o.name.toLowerCase().includes(val) ||
+                            (o.value && o.value.toLowerCase().includes(val))
+                        );
+                    }
+                    return String(p[col]).toLowerCase().includes(val);
+                });
+            });
+            renderTable(filtered);
+        }
+
+        // Event Listeners
+        document.querySelectorAll('.filter-input').forEach(i => i.addEventListener('input', applyFilters));
+        window.onload = loadPolicies;
+    </script>
+</body>
+
+</html>

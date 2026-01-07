@@ -1,0 +1,615 @@
+{% extends "net_mgmt/layout.html" %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="flex items-center gap-4">
+        <a href="{{ url_for('net_mgmt.dashboard') }}" class="btn-icon bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors rounded-lg p-2" title="Back to Dashboard">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+        <h1>{{ switch.hostname }}</h1>
+    </div>
+    <div>
+        <span class="badge gray">{{ switch.ip_address }}</span>
+        <button id="refreshDataBtn" class="btn-primary" style="display: inline-flex; margin-left: 1rem;"
+            onclick="refreshDeviceData()">
+            <i class="fa-solid fa-arrows-rotate"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<style>
+    /* Progress Bar Styles */
+    .deploy-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .deploy-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-glass);
+        padding: 2rem;
+        border-radius: 16px;
+        width: 400px;
+        text-align: center;
+        box-shadow: 0 4px 30px rgba(0, 255, 255, 0.1);
+    }
+
+    .progress-container {
+        background: #334155;
+        height: 10px;
+        border-radius: 5px;
+        overflow: hidden;
+        margin: 1.5rem 0;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(45deg, var(--primary-cyan) 25%, #2c3e50 25%, #2c3e50 50%, var(--primary-cyan) 50%, var(--primary-cyan) 75%, #2c3e50 75%, #2c3e50);
+        background-size: 40px 40px;
+        width: 0%;
+        transition: width 0.3s ease;
+        animation: progress-stripes 1s linear infinite;
+    }
+
+    @keyframes progress-stripes {
+        0% {
+            background-position: 40px 0;
+        }
+
+        100% {
+            background-position: 0 0;
+        }
+    }
+
+    .status-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: var(--primary-cyan);
+    }
+
+    .spin {
+        animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<!-- Deploy Overlay -->
+<div id="deploy-overlay" class="deploy-overlay">
+    <div class="deploy-card">
+        <div id="deploy-icon" class="status-icon"><i class="fa-solid fa-spinner spin"></i></div>
+        <h3 id="deploy-title">Deploying Firmware...</h3>
+        <p id="deploy-message" style="color: var(--text-secondary);">Initializing transfer...</p>
+
+        <div class="progress-container">
+            <div id="deploy-progress" class="progress-bar"></div>
+        </div>
+
+        <button id="deploy-stop-btn" class="btn-primary"
+            style="background: var(--danger-red); width: 100%; margin-top: 1rem;" onclick="stopDeploy()">
+            <i class="fa-solid fa-stop"></i> Stop Transfer
+        </button>
+        <button id="deploy-close-btn" class="btn-primary" style="display: none; width: 100%; margin-top: 1rem;"
+            onclick="closeDeployOverlay()">Close</button>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="icon-wrapper cyan">
+            <i class="fa-solid fa-microchip"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ switch.model }}</h3>
+            <p>Model</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="icon-wrapper green">
+            <i class="fa-solid fa-clock"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ switch.uptime[:15] }}...</h3> <!-- Truncate slightly -->
+            <p>Uptime</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="icon-wrapper purple">
+            <i class="fa-solid fa-layer-group"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ "Yes" if switch.is_stack else "No" }}</h3>
+            <p>Stack ({{ switch.stack_member_count }})</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="icon-wrapper {{ 'red' if switch.err_disabled_count > 0 else 'gray' }}">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ switch.err_disabled_count }}</h3>
+            <p>Err-Disabled</p>
+        </div>
+    </div>
+</div>
+
+<div class="glass-panel" style="margin-top: 2rem;">
+    <!-- Tabs Header -->
+    <div style="display: flex; border-bottom: 1px solid var(--border-glass); margin-bottom: 1rem;">
+        <div class="tab active"
+            style="padding: 1rem 2rem; border-bottom: 2px solid var(--primary-cyan); cursor: pointer;">Overview</div>
+        <div class="tab" style="padding: 1rem 2rem; color: var(--text-secondary); cursor: pointer;">Web CLI</div>
+        <div class="tab" style="padding: 1rem 2rem; color: var(--text-secondary); cursor: pointer;">Firmware</div>
+    </div>
+
+    <!-- Tab Content -->
+    <div id="overview-tab" class="tab-content active" style="padding: 1rem;">
+        <h3>Detailed Statistics</h3>
+        <p><strong>OS Version:</strong> {{ switch.os_version }}</p>
+        <p><strong>Serial Number:</strong> {{ switch.serial_number }}</p>
+        <p><strong>Active Ports:</strong> {{ switch.active_ports_count }}</p>
+        <p><strong>MAB Failures:</strong> {{ switch.mab_failed_count }}</p>
+    </div>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='net_mgmt/vendor/xterm.css') }}">
+    <script src="{{ url_for('static', filename='net_mgmt/vendor/xterm.js') }}"></script>
+    <script src="{{ url_for('static', filename='net_mgmt/vendor/xterm-addon-fit.js') }}"></script>
+
+    <div id="cli-tab" class="tab-content" style="padding: 1rem; display: none;">
+        <div id="terminal-container"
+            style="background: #000; border-radius: 8px; padding: 1rem; height: 500px; width: 100%; overflow: hidden;">
+            <!-- Xterm will render here -->
+        </div>
+        <div style="margin-top: 0.5rem; text-align: right;">
+            <button class="btn-primary" onclick="startTerminal()" id="connect-btn">Connect</button>
+            <button class="btn-primary" onclick="disconnectTerminal()"
+                style="background: var(--danger-red); display: none;" id="disconnect-btn">Disconnect</button>
+        </div>
+    </div>
+
+    <div id="firmware-tab" class="tab-content" style="padding: 1rem; display: none;">
+        <h3>Firmware Management</h3>
+
+        <div style="margin-bottom: 2rem; padding: 1rem; border: 1px dashed var(--border-glass); border-radius: 8px;">
+            <h4>1. Repository</h4>
+            <ul id="image-list" style="list-style: none; margin: 1rem 0; max-height: 100px; overflow-y: auto;">
+                <li>Loading images...</li>
+            </ul>
+            <div style="display: flex; gap: 0.5rem;">
+                <input type="file" id="image-upload-input" style="color: var(--text-secondary);">
+                <button class="btn-primary" id="upload-btn" onclick="uploadImage()">Upload New Image</button>
+                <span id="upload-status" style="margin-left: 1rem; align-self: center; font-size: 0.9rem;"></span>
+            </div>
+        </div>
+
+        <div style="padding: 1rem; background: rgba(6, 182, 212, 0.05); border-radius: 8px;">
+            <h4>2. Deploy to Switch</h4>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                Select an image above to deploy to <strong>flash:</strong> on {{ switch.hostname }}.
+                <br><span style="color: var(--danger-red);">Warning: This does NOT reload the switch, only copies the
+                    file.</span>
+            </p>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <select id="deploy-select"
+                    style="padding: 0.5rem; border-radius: 4px; background: var(--bg-dark); color: white; border: 1px solid var(--border-glass);">
+                    <option value="">-- Select Image --</option>
+                </select>
+                <button id="deploy-btn" class="btn-primary" onclick="deployImage()">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Deploy File
+                </button>
+            </div>
+            <div id="deploy-status" style="margin-top: 1rem; font-family: monospace;"></div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    async function refreshDeviceData() {
+        const btn = document.getElementById('refreshDataBtn');
+        const icon = btn.querySelector('i');
+        
+        // Loading State
+        icon.classList.add('fa-spin');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-arrows-rotate fa-spin"></i> Refreshing...';
+
+        try {
+            const res = await fetch("{{ url_for('net_mgmt.refresh_device_data', hostname=switch.hostname) }}", { method: 'POST' });
+            const data = await res.json();
+
+            if (res.ok) {
+                location.reload();
+            } else {
+                alert("Failed to refresh: " + (data.message || "Unknown Error"));
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Connection Error");
+        } finally {
+            icon.classList.remove('fa-spin');
+            btn.disabled = false;
+        }
+    }
+</script>
+<script>
+    // Tab Switching Logic
+    const tabs = document.querySelectorAll('.tab');
+    const contents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.style.borderBottom = 'none');
+            tabs.forEach(t => t.style.color = 'var(--text-secondary)');
+            tab.style.borderBottom = '2px solid var(--primary-cyan)';
+            tab.style.color = 'var(--text-primary)';
+
+            contents.forEach(c => c.style.display = 'none');
+            // Simple index mapping: 0->Overview, 1->CLI, 2->Firmware
+            if (index === 0) document.getElementById('overview-tab').style.display = 'block';
+            if (index === 1) {
+                document.getElementById('cli-tab').style.display = 'block';
+                // Slight delay to allow display:block to render so fit works
+                setTimeout(() => {
+                     initTerminal(); 
+                     if(fitAddon) fitAddon.fit();
+                }, 100);
+            }
+            if (index === 2) {
+                document.getElementById('firmware-tab').style.display = 'block';
+                loadImages(); // Load when tab is opened
+            }
+        });
+    });
+
+    // Load images on tab switch or page load
+    async function loadImages() {
+        try {
+            const response = await fetch('/api/images');
+            const images = await response.json();
+
+            const list = document.getElementById('image-list');
+            const select = document.getElementById('deploy-select');
+
+            list.innerHTML = '';
+            select.innerHTML = '<option value="">-- Select Image --</option>';
+
+            images.forEach(img => {
+                // List Item
+                const li = document.createElement('li');
+                li.innerHTML = `<i class="fa-solid fa-file-code"></i> ${img}`;
+                list.appendChild(li);
+
+                // Select Option
+                const opt = document.createElement('option');
+                opt.value = img;
+                opt.innerText = img;
+                select.appendChild(opt);
+            });
+
+            if (images.length === 0) list.innerHTML = '<li>No images in repository.</li>';
+
+        } catch (e) {
+            console.error("Failed to load images");
+        }
+    }
+
+    async function uploadImage() {
+        const input = document.getElementById('image-upload-input');
+        const status = document.getElementById('upload-status');
+        const btn = document.getElementById('upload-btn');
+
+        status.innerText = "";
+        if (input.files.length === 0) {
+            status.innerHTML = '<span style="color: var(--danger-red);">Please select a file first.</span>';
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+
+        btn.disabled = true;
+        status.innerHTML = '<span style="color: var(--primary-cyan);"><i class="fa-solid fa-spinner spin"></i> Uploading...</span>';
+
+        try {
+            const res = await fetch('/api/images', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.success) {
+                status.innerHTML = '<span style="color: var(--success-green);"><i class="fa-solid fa-check"></i> Uploaded!</span>';
+                input.value = '';
+                loadImages();
+            } else {
+                status.innerHTML = `<span style="color: var(--danger-red);">Error: ${data.error}</span>`;
+            }
+        } catch (e) {
+            console.error(e);
+            status.innerHTML = '<span style="color: var(--danger-red);">Upload Connection Error</span>';
+        }
+        btn.disabled = false;
+    }
+
+    let currentJobId = null;
+
+    async function deployImage() {
+        const select = document.getElementById('deploy-select');
+        const image = select.value;
+        if (!image) return alert("Select an image to deploy");
+
+        // Show Overlay
+        const overlay = document.getElementById('deploy-overlay');
+        const progressBar = document.getElementById('deploy-progress');
+        const title = document.getElementById('deploy-title');
+        const msg = document.getElementById('deploy-message');
+        const icon = document.getElementById('deploy-icon');
+        const closeBtn = document.getElementById('deploy-close-btn');
+        const stopBtn = document.getElementById('deploy-stop-btn');
+
+        overlay.style.display = 'flex';
+        closeBtn.style.display = 'none';
+        stopBtn.style.display = 'block';
+        progressBar.style.width = '0%';
+        progressBar.style.background = 'linear-gradient(90deg, var(--primary-cyan), var(--primary-purple))';
+        title.innerText = "Deploying Firmware...";
+        msg.innerText = "Initializing request...";
+        icon.innerHTML = '<i class="fa-solid fa-circle-notch spin"></i>';
+        icon.style.color = 'var(--primary-cyan)';
+
+        try {
+            // Start Job
+            const res = await fetch('/api/device/{{ switch.hostname }}/deploy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: image })
+            });
+            const startData = await res.json();
+
+            if (!startData.success) {
+                throw new Error(startData.error || "Failed to start job");
+            }
+
+            const jobId = startData.job_id;
+            currentJobId = jobId;
+
+            // Client-side progress simulation
+            let currentProgress = 0;
+            const progressInterval = setInterval(() => {
+                if (currentProgress < 95) {
+                    // Slow down as it gets higher
+                    let increment = 1;
+                    if (currentProgress > 50) increment = 0.5;
+                    if (currentProgress > 80) increment = 0.2;
+
+                    currentProgress += increment;
+                    progressBar.style.width = currentProgress + '%';
+                }
+            }, 500); // Update every 500ms
+
+            // Poll Status
+            const pollInterval = setInterval(async () => {
+                try {
+                    const statusRes = await fetch(`/api/deploy/status/${jobId}`);
+                    const statusData = await statusRes.json();
+
+                    msg.innerText = statusData.message;
+
+                    // If finished
+                    if (statusData.status === 'success' || statusData.status === 'error') {
+                        clearInterval(pollInterval);
+                        clearInterval(progressInterval); // Stop simulation
+
+                        if (statusData.status === 'success') {
+                            progressBar.style.width = '100%';
+                            progressBar.style.background = 'var(--success-green)'; // Solid green
+                            progressBar.style.animation = 'none'; // Stop stripes
+                            title.innerText = "Deployment Successful!";
+                            icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                            icon.style.color = 'var(--success-green)';
+                            closeBtn.style.display = 'block';
+                            stopBtn.style.display = 'none';
+                        }
+
+                        if (statusData.status === 'error') {
+                            throw new Error(statusData.message);
+                        }
+                    }
+
+                    // If still copying, do nothing (let fake progress continue)
+
+                } catch (pollErr) {
+                    clearInterval(pollInterval);
+                    clearInterval(progressInterval);
+                    handleError(pollErr);
+                }
+            }, 2000);
+
+        } catch (e) {
+            handleError(e);
+        }
+
+        function handleError(e) {
+            title.innerText = "Deployment Failed";
+            msg.innerText = e.message || "Unknown error";
+            icon.innerHTML = '<i class="fa-solid fa-circle-xmark"></i>';
+            icon.style.color = 'var(--danger-red)';
+            progressBar.style.background = 'var(--danger-red)';
+            closeBtn.style.display = 'block';
+            stopBtn.style.display = 'none';
+        }
+    }
+
+    async function stopDeploy() {
+        if (!currentJobId) return;
+
+        if (confirm("Are you sure you want to stop the deployment?")) {
+            try {
+                await fetch(`/api/deploy/stop/${currentJobId}`, { method: 'POST' });
+                document.getElementById('deploy-message').innerText = "Stopping...";
+            } catch (e) {
+                console.error("Stop failed", e);
+            }
+        }
+    }
+
+    function closeDeployOverlay() {
+        document.getElementById('deploy-overlay').style.display = 'none';
+    }
+
+    // Terminal Logic
+    let term = null;
+    let fitAddon = null;
+    let terminalSessionId = null;
+    let termPollInterval = null;
+
+    function initTerminal() {
+        if (term) return;
+
+        const container = document.getElementById('terminal-container');
+        term = new Terminal({
+            cursorBlink: true,
+            convertEol: true, // Fixes diagonal text (LF -> CRLF)
+            theme: {
+                background: '#000000',
+                foreground: '#ffffff',
+                cyan: '#06b6d4'
+            },
+            fontFamily: 'monospace',
+            fontSize: 14
+        });
+        
+        // Try to use FitAddon if loaded
+        try {
+            fitAddon = new FitAddon.FitAddon();
+            term.loadAddon(fitAddon);
+        } catch(e) { console.warn("FitAddon not loaded", e); }
+
+        term.open(container);
+        if(fitAddon) fitAddon.fit();
+        
+        term.write('\r\n\x1b[36mWelcome to Net-Mgmt Interactive Terminal\x1b[0m\r\n');
+        term.write('Click "Connect" to start a secure session.\r\n\r\n');
+
+        // Handle Input
+        term.onData(async (data) => {
+            if(!terminalSessionId) return;
+            try {
+                await fetch('{{ url_for("net_mgmt.terminal_input") }}', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ session_id: terminalSessionId, data: data })
+                });
+            } catch(e) { console.error(e); }
+        });
+    }
+
+    async function startTerminal() {
+        if(terminalSessionId) return; // Already active
+
+        // Init UI if first time
+        initTerminal();
+        term.reset();
+        term.write('Connecting to {{ switch.hostname }}...\r\n');
+        
+        const btnConnect = document.getElementById('connect-btn');
+        const btnDisconnect = document.getElementById('disconnect-btn');
+        btnConnect.disabled = true;
+
+        try {
+            const res = await fetch('{{ url_for("net_mgmt.start_terminal") }}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ hostname: '{{ switch.hostname }}' })
+            });
+            const data = await res.json();
+            
+            if(data.error) throw new Error(data.error);
+            
+            terminalSessionId = data.session_id;
+            
+            btnConnect.style.display = 'none';
+            btnDisconnect.style.display = 'inline-block';
+            
+            // Start Polling Loop
+            termPollInterval = setInterval(readTerminalOutput, 100); // 100ms poll
+            
+            term.focus();
+            
+        } catch(e) {
+            term.write(`\r\n\x1b[31mConnection Error: ${e.message}\x1b[0m\r\n`);
+            btnConnect.disabled = false;
+        }
+    }
+
+    async function readTerminalOutput() {
+        if(!terminalSessionId) return;
+        try {
+            const res = await fetch('{{ url_for("net_mgmt.terminal_read") }}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ session_id: terminalSessionId })
+            });
+            const data = await res.json();
+            
+            if(data.data) {
+                term.write(data.data);
+            }
+        } catch(e) {
+            // Ignore small poll errors or disconnect
+        }
+    }
+
+    async function disconnectTerminal() {
+        if(!terminalSessionId) return;
+        
+        clearInterval(termPollInterval);
+        
+        try {
+             await fetch('{{ url_for("net_mgmt.terminal_close") }}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ session_id: terminalSessionId })
+            });
+        } catch(e) {}
+        
+        terminalSessionId = null;
+        term.write('\r\n\x1b[33mSession Disconnected.\x1b[0m\r\n');
+        
+        document.getElementById('connect-btn').style.display = 'inline-block';
+        document.getElementById('connect-btn').disabled = false;
+        document.getElementById('disconnect-btn').style.display = 'none';
+    }
+
+    // Adjust fit on tab show
+    tabs.forEach((tab, index) => {
+         // ... existing listener ...
+         // We need to inject our logic into the existing listener or just add a new one.
+         // Since I replaced the logic for tabs above, I can't easily hook in here without modifying the tab logic block 
+         // or adding a MutationObserver / specific hook. 
+         // Use a periodic check or just button to "Fit"?
+         // Best is to hook into the existing click event if I can.
+    });
+    
+    // Add Click listener specific for Terminal Tab
+    // I will add a manual event listener for the 2nd tab (index 1 -> CLI)
+    
+    // Auto init on load? No, wait for tab.
+    // Hack: Add listener to the specific tab element if possible, but I don't have ID for tabs.
+    // I can assume initTerminal() calls fit() which checks size.
+</script>
+{% endblock %}

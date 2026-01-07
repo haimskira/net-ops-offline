@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetOps - Create Object</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=1.5">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/choices.min.css') }}">
+    <script src="{{ url_for('static', filename='js/choices.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+    <style>
+        @font-face {
+            font-family: 'Assistant';
+            src: url("{{ url_for('static', filename='fonts/Assistant-Regular.ttf') }}") format('truetype');
+            font-weight: 400;
+        }
+
+        @font-face {
+            font-family: 'Assistant';
+            src: url("{{ url_for('static', filename='fonts/Assistant-Bold.ttf') }}") format('truetype');
+            font-weight: 700;
+        }
+
+        body {
+            font-family: 'Assistant', sans-serif !important;
+            background-color: var(--color-slate-950);
+            color: var(--color-slate-100);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .spinner {
+            border-top-color: transparent !important;
+            animation: rot 1s linear infinite;
+        }
+
+        @keyframes rot {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .choices__inner {
+            border-radius: 0.75rem !important;
+            background-color: var(--color-slate-800) !important;
+            border: 1px solid var(--color-slate-700) !important;
+            padding: 8px !important;
+            color: var(--color-slate-100) !important;
+            min-height: 50px;
+            text-align: left;
+        }
+
+        .choices__list--dropdown {
+            background-color: var(--color-slate-800) !important;
+            border: 1px solid var(--color-slate-700) !important;
+            color: var(--color-slate-100) !important;
+        }
+
+        .choices__item--selectable.is-highlighted {
+            background-color: var(--color-indigo-500) !important;
+        }
+
+        .choices__input {
+            color: var(--color-slate-100) !important;
+            background-color: transparent !important;
+        }
+
+        /* Theme override for glass card handled in theme.css or here via vars if possible */
+        .glass-card {
+            background-color: var(--color-slate-900);
+            /* Fallback/Base */
+            background: linear-gradient(145deg, var(--color-slate-900), var(--color-slate-800));
+            border: 1px solid var(--color-slate-700);
+            backdrop-filter: blur(16px);
+        }
+
+        .input-focus:focus {
+            border-color: var(--color-indigo-500) !important;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .status-animate {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* General Input Styles using Vars */
+        input,
+        select {
+            background-color: var(--color-slate-900) !important;
+            color: var(--color-slate-100) !important;
+            border-color: var(--color-slate-700) !important;
+        }
+    </style>
+</head>
+
+<body class="p-6">
+    <div class="max-w-2xl w-full glass-card rounded-3xl p-8 shadow-2xl transition-all">
+
+        <div class="flex items-center justify-between mb-8 border-b border-slate-700/50 pb-6">
+            <h2 class="text-2xl font-bold text-indigo-400 flex items-center gap-3">
+                <span class="bg-indigo-500/10 p-2 rounded-lg">📦</span> Create Infrastructure Object
+            </h2>
+            <div id="loading-indicator"
+                class="hidden flex items-center gap-2 bg-slate-900/80 px-4 py-2 rounded-full border border-indigo-500/30">
+                <div class="spinner w-3.5 h-3.5 border-2 border-indigo-400 rounded-full"></div>
+                <span class="text-xs font-medium text-slate-300">Loading data...</span>
+            </div>
+        </div>
+
+        <div id="object-form" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-bold text-slate-400 mb-2">Object Type</label>
+                    <select id="type" onchange="updateUI()"
+                        class="w-full border border-slate-700 p-3 rounded-xl bg-slate-900 text-slate-200 outline-none">
+                        <option value="address">Address (IP Host)</option>
+                        <option value="address-group">Address Group</option>
+                        <option value="service">Service (Port/Protocol)</option>
+                        <option value="service-group">Service Group</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-400 mb-2">Object Name</label>
+                    <input type="text" id="name" placeholder="e.g. SRV_PROD_WEB"
+                        class="w-full border border-slate-700 p-3 rounded-xl bg-slate-900 text-slate-200 outline-none input-focus">
+                </div>
+            </div>
+
+            <div id="single-value-container" class="space-y-2">
+                <label id="value-label" class="block text-sm font-bold text-slate-400">Value (IP / Port)</label>
+                <div class="flex gap-3">
+                    <input type="text" id="value" oninput="updateServiceName()"
+                        class="flex-1 border border-slate-700 p-3 rounded-xl bg-slate-900 text-slate-200 outline-none input-focus">
+
+                    <select id="prefix_container"
+                        class="w-28 border border-slate-700 p-3 rounded-xl bg-slate-900 text-slate-200 outline-none">
+                        <option value="32">/32 (Host)</option>
+                        <option value="24">/24</option>
+                        <option value="16">/16</option>
+                        <option value="8">/8</option>
+                        <option value="0">None</option>
+                    </select>
+
+                    <select id="protocol_container" onchange="updateServiceName()"
+                        class="w-32 border border-slate-700 p-3 rounded-xl bg-slate-900 text-slate-200 outline-none hidden">
+                        <option value="tcp">TCP</option>
+                        <option value="udp">UDP</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="multi-select-container" class="hidden space-y-2">
+                <label id="multi-label" class="block text-sm font-bold text-slate-400">Select Members from
+                    System</label>
+                <select id="members_select" class="w-full" multiple></select>
+            </div>
+        </div>
+
+        <button onclick="createObj()" id="btn"
+            class="w-full mt-10 bg-indigo-600 text-white font-bold py-4 rounded-2xl hover:bg-indigo-500 transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2">
+            <span>🚀</span> Submit Creation Request
+        </button>
+
+        <div id="status" class="mt-6 p-4 rounded-xl hidden text-center font-bold border status-animate"></div>
+    </div>
+
+    <script>
+        let multiSelect;
+
+        // פונקציות ולידציה משופרות
+        const isValidIPv4 = (ip) => /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip);
+        const isValidHostname = (host) => /^[a-zA-Z0-9][-a-zA-Z0-9.]+[a-zA-Z0-9]$/.test(host);
+        const isValidPortRange = (port) => /^(\d{1,5})(-\d{1,5})?(,\d{1,5}(-\d{1,5})?)*$/.test(port.replace(/\s/g, ''));
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const element = document.getElementById('members_select');
+            multiSelect = new Choices(element, {
+                removeItemButton: true,
+                placeholderValue: 'Search existing object...',
+                noChoicesText: 'No data found',
+                itemSelectText: 'Select',
+                searchEnabled: true,
+                shouldSort: false
+            });
+
+            // Add Name Input Listener for manual typing (Address/Groups)
+            document.getElementById('name').addEventListener('input', (e) => {
+                checkNameAvailability(e.target.value);
+            });
+
+            updateUI();
+        });
+
+        async function updateUI() {
+            const type = document.getElementById('type').value;
+            const isGroup = type.includes('group');
+            const valueLabel = document.getElementById('value-label');
+
+            document.getElementById('single-value-container').classList.toggle('hidden', isGroup);
+            document.getElementById('multi-select-container').classList.toggle('hidden', !isGroup);
+
+            document.getElementById('prefix_container').classList.toggle('hidden', type !== 'address');
+            document.getElementById('protocol_container').classList.toggle('hidden', type !== 'service');
+
+            if (type === 'address') {
+                valueLabel.innerText = "IP Address or Hostname";
+                document.getElementById('name').readOnly = false;
+                document.getElementById('name').placeholder = "e.g. web-server-01";
+                document.getElementById('name').classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            if (type === 'service') {
+                valueLabel.innerText = "Ports (e.g. 80,443)";
+                updateServiceName(); // Auto-generates immediately
+            }
+
+            if (isGroup) {
+                const endpoint = type === 'address-group' ? '/get-address-objects' : '/get-service-objects';
+                const key = type === 'address-group' ? 'addresses' : 'services';
+                loadChoices(endpoint, key);
+                document.getElementById('name').readOnly = false;
+                document.getElementById('name').classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function updateServiceName() {
+            const type = document.getElementById('type').value;
+            if (type !== 'service') return;
+
+            const nameInput = document.getElementById('name');
+            const proto = document.getElementById('protocol_container').value.toUpperCase();
+            const val = document.getElementById('value').value.trim().replace(/\s/g, '');
+
+            if (val) {
+                nameInput.value = `${proto}_${val}`;
+                nameInput.readOnly = true;
+                nameInput.classList.add('opacity-50', 'cursor-not-allowed');
+                nameInput.placeholder = "Auto-generated...";
+            } else {
+                nameInput.value = "";
+                nameInput.placeholder = "Enter Port to generate name...";
+            }
+            checkNameAvailability(nameInput.value);
+        }
+
+        let debounceTimer;
+        async function checkNameAvailability(name) {
+            const status = document.getElementById('status');
+            const btn = document.getElementById('btn');
+
+            if (!name || name.trim() === '') {
+                // Clear specific name error if empty (or let other validation handle it)
+                return;
+            }
+
+            // Debounce
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch('/check-object-name', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: name })
+                    });
+                    const data = await res.json();
+
+                    if (data.exists) {
+                        status.innerText = `Error: Object '${name}' already exists (${data.type})`;
+                        status.classList.remove('hidden');
+                        status.className = "mt-6 p-4 rounded-xl text-center font-bold border status-animate bg-rose-500/10 text-rose-400 border-rose-500/30";
+                        btn.disabled = true;
+                        btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        // Clear error only if it's currently showing a "exists" error
+                        if (status.innerText.includes("already exists")) {
+                            status.classList.add('hidden');
+                            btn.disabled = false;
+                            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        }
+                    }
+                } catch (e) {
+                    console.error("Check name error", e);
+                }
+            }, 500); // 500ms delay
+        }
+
+        async function loadChoices(url, dataKey) {
+            const loader = document.getElementById('loading-indicator');
+            loader.classList.remove('hidden');
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const items = data[dataKey].map(name => ({ value: name, label: name }));
+                    multiSelect.clearChoices();
+                    multiSelect.setChoices(items, 'value', 'label', true);
+                }
+            } catch (e) { console.error("Load Error", e); }
+            finally { loader.classList.add('hidden'); }
+        }
+
+        /**
+         * תיקון: ריקון יסודי של השדות לאחר הצלחה
+         */
+        function resetForm() {
+            document.getElementById('name').value = '';
+            document.getElementById('value').value = '';
+            if (multiSelect) {
+                multiSelect.removeActiveItems(); // ניקוי בחירות Choices.js
+            }
+        }
+
+        function showStatus(msg, isSuccess) {
+            const status = document.getElementById('status');
+            status.innerText = msg;
+            status.classList.remove('hidden');
+            status.className = `mt-6 p-4 rounded-xl text-center font-bold border status-animate ${isSuccess ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                }`;
+            if (isSuccess) setTimeout(() => status.classList.add('hidden'), 5000);
+        }
+
+        async function createObj() {
+            const btn = document.getElementById('btn');
+            const type = document.getElementById('type').value;
+            const name = document.getElementById('name').value.trim();
+            let value;
+
+            if (!name) return showStatus("Object name is required", false);
+
+            if (type.includes('group')) {
+                const selected = multiSelect.getValue(true);
+                if (selected.length === 0) return showStatus("Group cannot be empty", false);
+                value = selected.join(',');
+            } else {
+                value = document.getElementById('value').value.trim();
+                if (!value) return showStatus("Value is required", false);
+
+                // Validation compatible with Backend
+                if (type === 'address') {
+                    if (!isValidIPv4(value) && !isValidHostname(value)) {
+                        return showStatus("Invalid IP address or Hostname", false);
+                    }
+                }
+                if (type === 'service' && !isValidPortRange(value)) {
+                    return showStatus("Invalid port format", false);
+                }
+            }
+
+            const payload = {
+                type, name, value,
+                prefix: type === 'address' ? document.getElementById('prefix_container').value : null,
+                protocol: type === 'service' ? document.getElementById('protocol_container').value : null
+            };
+
+            btn.disabled = true;
+            btn.innerHTML = "Processing request...";
+
+            try {
+                const res = await fetch('/create-object', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    showStatus(data.message, true);
+                    resetForm();
+                } else {
+                    showStatus(data.message || "Server error", false);
+                }
+            } catch (e) {
+                showStatus("Communication error", false);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "🚀 Submit Creation Request";
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>NetOps Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/glass-theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+    <style>
+        body {
+            background-color: var(--bg-darker);
+            color: var(--text-primary);
+            font-family: 'Assistant', sans-serif;
+            overflow: hidden;
+            margin: 0;
+            padding: 24px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 24px;
+            height: calc(100vh - 48px);
+        }
+
+        .card {
+            background: var(--surface-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .light-mode .card {
+            background: var(--surface-glass);
+            /* Vars handle change */
+            border: 1px solid var(--border-glass);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        /* ... existing styles ... */
+
+        .dashboard-grid {
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: minmax(220px, 1fr) 1.5fr;
+            /* Ensure min-height for top cards */
+            gap: 20px;
+        }
+
+        .area-ops {
+            grid-column: span 1;
+        }
+
+        .area-queue {
+            grid-column: span 1;
+        }
+
+        .area-security {
+            grid-column: span 2;
+        }
+
+        .area-traffic {
+            grid-column: span 4;
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+        }
+
+        /* Ticker */
+        .ticker-item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .light-mode .ticker-item {
+            border-bottom-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-container {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-grid">
+        <!-- 1. Operational Health -->
+        <div class="card area-ops">
+            <div class="card-title">
+                <span>Operational Health</span>
+                <span id="ops-badge"
+                    class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Active</span>
+            </div>
+            <div class="card-content gap-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-slate-400">Firewall Link</span>
+                    <div class="flex items-center gap-2">
+                        <span id="fw-status-dot" class="status-indicator text-emerald-500 bg-emerald-500"></span>
+                        <span id="fw-status-text" class="text-sm font-bold text-slate-200">Connected</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-slate-400">Inventory Sync</span>
+                    <span id="sync-time"
+                        class="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded">--:--</span>
+                </div>
+
+                <div class="mt-auto">
+                    <span class="text-xs text-slate-500">DB Health</span>
+                    <div class="w-full bg-slate-700/50 rounded-full h-1.5 mt-2 overflow-hidden">
+                        <div id="db-bar" class="bg-blue-500 h-full rounded-full" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between mt-1">
+                        <span class="text-[10px] text-slate-500">Size</span>
+                        <span id="db-val" class="text-[10px] text-slate-300">0 MB</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Work Queue -->
+        <div class="card area-queue">
+            <div class="card-title">
+                <span>{{ 'Work Queue' if session.get('is_admin') else 'My Pending Actions' }}</span>
+                <span class="text-xs text-slate-500">{{ 'Global Pending' if session.get('is_admin') else 'Private Queue'
+                    }}</span>
+            </div>
+            <div class="card-content gap-2">
+                {% set rules_target = 'admin-approval' if session.get('is_admin') else 'my-requests' %}
+                <div class="flex justify-between items-center p-2.5 rounded-xl bg-slate-800/30 border border-white/5 light-mode:bg-white/40 light-mode:border-black/5 hover:bg-slate-700/30 transition-colors cursor-pointer"
+                    onclick="window.parent.toggleComponent('{{ rules_target }}')">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-base">🛡️</span>
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-slate-300">Rule Requests</span>
+                            <span class="text-[9px] text-slate-500 uppercase tracking-wide">Waiting approval</span>
+                        </div>
+                    </div>
+                    <span id="count-rules" class="text-lg font-black text-indigo-400">0</span>
+                </div>
+
+                {% set objects_target = 'object-approval' if session.get('is_admin') else 'my-objects' %}
+                <div class="flex justify-between items-center p-2.5 rounded-xl bg-slate-800/30 border border-white/5 light-mode:bg-white/40 light-mode:border-black/5 hover:bg-slate-700/30 transition-colors cursor-pointer"
+                    onclick="window.parent.toggleComponent('{{ objects_target }}')">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-base">📦</span>
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-slate-300">Object Requests</span>
+                            <span class="text-[9px] text-slate-500 uppercase tracking-wide">Waiting approval</span>
+                        </div>
+                    </div>
+                    <span id="count-objects" class="text-lg font-black text-purple-400">0</span>
+                </div>
+
+                <div class="mt-auto pt-2 flex items-center gap-2 justify-center border-t border-white/5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                    <span id="count-expiry" class="text-[10px] font-bold text-rose-400">0 Expiring Soon</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Security & Audit -->
+        <div class="card area-security">
+            <div class="card-title">
+                <span>{{ 'Security Intelligence' if session.get('is_admin') else 'My Recent Activity' }}</span>
+                <span class="text-xs text-slate-500">Audit Trail</span>
+            </div>
+            <div class="flex gap-6 h-full">
+                {% if session.get('is_admin') %}
+                <!-- Top Admins (Admin Only) -->
+                <div class="w-1/3 border-r border-white/5 pr-4 flex flex-col justify-center">
+                    <span class="text-[10px] uppercase tracking-widest text-slate-500 mb-3">Top Admins</span>
+                    <div id="top-admins-list" class="flex flex-col gap-3">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Recent Ticker -->
+                <div class="{{ 'w-2/3' if session.get('is_admin') else 'w-full' }} flex flex-col">
+                    <span class="text-[10px] uppercase tracking-widest text-slate-500 mb-3">Recent Activity</span>
+                    <div id="audit-list" class="flex flex-col gap-1 overflow-hidden">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Traffic Intelligence -->
+        <div class="card area-traffic">
+            <div class="w-1/3 flex flex-col h-full pr-4">
+                <div class="card-title">Top 5 Applications</div>
+                <div class="chart-container">
+                    <canvas id="chart-apps"></canvas>
+                </div>
+            </div>
+
+            <div class="w-1/3 flex flex-col h-full border-l border-white/5 px-4">
+                <div class="card-title">Allow vs Deny</div>
+                <div class="chart-container relative">
+                    <canvas id="chart-actions"></canvas>
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <span id="total-traffic" class="text-2xl font-black text-slate-200">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-1/3 flex flex-col h-full border-l border-white/5 pl-4">
+                <div class="card-title">Top Talkers (Sources)</div>
+                <div class="flex-grow overflow-y-auto custom-scroll pr-2">
+                    <table class="w-full text-left text-xs">
+                        <thead class="text-slate-500 border-b border-white/5">
+                            <tr>
+                                <th class="pb-2">Source IP</th>
+                                <th class="pb-2">Hits</th>
+                            </tr>
+                        </thead>
+                        <tbody id="top-talkers-body" class="text-slate-300">
+                            <!-- JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Logic -->
+    <script>
+        // Init logic
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial Load
+            refreshDashboard();
+            // Poll every 30s
+            setInterval(refreshDashboard, 30000);
+        });
+
+        async function refreshDashboard() {
+            await Promise.all([
+                loadOperational(),
+                loadWorkQueue(),
+                loadSecurity(),
+                loadTraffic()
+            ]);
+        }
+
+        async function loadOperational() {
+            try {
+                const res = await fetch('/api/dashboard/operational');
+                const data = await res.json();
+
+                // FW Status
+                const dot = document.getElementById('fw-status-dot');
+                const txt = document.getElementById('fw-status-text');
+                if (data.fw_connection) {
+                    dot.className = "status-indicator text-emerald-500 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]";
+                    txt.innerText = "Connected";
+                    txt.className = "text-sm font-bold text-emerald-400";
+                } else {
+                    dot.className = "status-indicator text-rose-500 bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.5)]";
+                    txt.innerText = "Disconnected";
+                    txt.className = "text-sm font-bold text-rose-400";
+                }
+
+                // Sync
+                document.getElementById('sync-time').innerText = data.last_sync;
+
+                // DB
+                const mb = data.db_size_mb;
+                document.getElementById('db-val').innerText = mb + ' MB';
+                const pct = Math.min((mb / 100) * 100, 100);
+                document.getElementById('db-bar').style.width = pct + '%';
+                document.getElementById('db-bar').className = pct > 90 ? "h-full rounded-full bg-rose-500" : "h-full rounded-full bg-blue-500";
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadWorkQueue() {
+            try {
+                const res = await fetch('/api/dashboard/work-queue');
+                const data = await res.json();
+
+                document.getElementById('count-rules').innerText = data.pending_rules;
+                document.getElementById('count-objects').innerText = data.pending_objects;
+                document.getElementById('count-expiry').innerText = data.expiring_rules + " Expiring Soon";
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadSecurity() {
+            try {
+                const res = await fetch('/api/dashboard/security');
+                const data = await res.json();
+
+                // Recent
+                const list = document.getElementById('audit-list');
+                list.innerHTML = data.recent_actions.map(l => `
+                    <div class="ticker-item">
+                        <div class="flex flex-col">
+                            <span class="text-indigo-400 font-bold">${l.action}</span>
+                            <span class="text-[10px] text-slate-500">${l.details}</span>
+                        </div>
+                        <div class="text-right">
+                             <span class="block text-slate-300 font-bold">${l.user}</span>
+                             <span class="text-[9px] text-slate-500 text-mono">${l.time}</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Top Admins
+                const admins = document.getElementById('top-admins-list');
+                admins.innerHTML = data.top_admins.map((a, i) => `
+                    <div class="flex items-center gap-3">
+                         <div class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-300 border border-white/10">
+                            ${i + 1}
+                         </div>
+                         <div class="flex flex-col">
+                              <span class="text-xs font-bold text-slate-300">${a.user}</span>
+                              <span class="text-[9px] text-slate-500">${a.count} Actions</span>
+                         </div>
+                    </div>
+                `).join('');
+
+            } catch (e) { console.error(e); }
+        }
+
+        let appChart = null;
+        let actionChart = null;
+
+        async function loadTraffic() {
+            try {
+                const res = await fetch('/api/dashboard/traffic');
+                const data = await res.json();
+
+                // Top Sources Table
+                document.getElementById('top-talkers-body').innerHTML = data.top_sources.map(s => `
+                    <tr class="border-b border-white/5 last:border-0 hover:bg-white/5">
+                        <td class="py-2 text-indigo-300 font-mono">${s.ip}</td>
+                        <td class="py-2 font-bold">${s.count}</td>
+                    </tr>
+                `).join('');
+
+                // Charts
+                if (typeof Chart === 'undefined') return;
+
+                // 1. Top Apps (Pie)
+                const ctxApps = document.getElementById('chart-apps').getContext('2d');
+                if (appChart) appChart.destroy();
+
+                appChart = new Chart(ctxApps, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.top_apps.map(a => a.name),
+                        datasets: [{
+                            data: data.top_apps.map(a => a.count),
+                            backgroundColor: ['#6366f1', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b'],
+                            borderWidth: 0,
+                            hoverOffset: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '60%',
+                        plugins: {
+                            legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10, family: 'Assistant' }, boxWidth: 10 } }
+                        }
+                    }
+                });
+
+                // 2. Actions (Doughnut)
+                const ctxActions = document.getElementById('chart-actions').getContext('2d');
+                if (actionChart) actionChart.destroy();
+
+                const allow = data.actions['allow'] || 0;
+                const deny = data.actions['deny'] || 0;
+                const total = allow + deny;
+                document.getElementById('total-traffic').innerText = total;
+
+                actionChart = new Chart(ctxActions, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Allow', 'Deny'],
+                        datasets: [{
+                            data: [allow, deny],
+                            backgroundColor: ['#10b981', '#f43f5e'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '80%',
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+
+            } catch (e) { console.error(e); }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environment Configuration</title>
+
+    <!-- Design System -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/glass-theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            background-color: transparent !important;
+            font-family: 'Assistant', sans-serif;
+        }
+
+        .section-card {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.6) 0%, rgba(15, 23, 42, 0.4) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .section-card:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.7) 0%, rgba(15, 23, 42, 0.5) 100%);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-glass {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .input-glass:focus {
+            background: rgba(0, 0, 0, 0.5);
+            border-color: var(--primary-cyan);
+            box-shadow: 0 0 0 1px var(--primary-cyan);
+            outline: none;
+        }
+
+        .gradient-text {
+            background: linear-gradient(to right, var(--primary-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* LIGHT MODE OVERRIDES - PREMIUM */
+        .light-mode body {
+            color: #334155 !important;
+            /* slate-700 */
+        }
+
+        /* Card Styling */
+        .light-mode .section-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            /* slate-200 */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+        }
+
+        .light-mode .section-card:hover {
+            border-color: #cbd5e1;
+            /* slate-300 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Inputs */
+        .light-mode .input-glass {
+            background: #f8fafc;
+            /* slate-50 */
+            border: 1px solid #e2e8f0;
+            /* slate-200 */
+            color: #0f172a;
+            /* slate-900 */
+        }
+
+        .light-mode .input-glass:focus {
+            background: #ffffff;
+            border-color: #0ea5e9;
+            /* sky-500 */
+            box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+        }
+
+        .light-mode .input-glass::placeholder {
+            color: #94a3b8;
+            /* slate-400 */
+        }
+
+        /* Typography */
+        .light-mode h1,
+        .light-mode h2,
+        .light-mode h3,
+        .light-mode h4 {
+            color: #0f172a !important;
+            /* Slate-900 */
+        }
+
+        .light-mode p,
+        .light-mode label {
+            color: #475569 !important;
+            /* Slate-600 */
+            font-weight: 600;
+            /* Make labels slightly bolder in light mode */
+        }
+
+        /* Specific Color Overrides for Section Headers (Darker shades) */
+        .light-mode .text-cyan-400 {
+            color: #0891b2 !important;
+        }
+
+        /* cyan-600 */
+        .light-mode .text-purple-400 {
+            color: #7c3aed !important;
+        }
+
+        /* violet-600 */
+        .light-mode .text-emerald-400 {
+            color: #059669 !important;
+        }
+
+        /* emerald-600 */
+        .light-mode .text-blue-400 {
+            color: #2563eb !important;
+        }
+
+        /* blue-600 */
+
+        .light-mode .text-cyan-500 {
+            color: #0891b2 !important;
+        }
+
+        .light-mode .text-purple-500 {
+            color: #7c3aed !important;
+        }
+
+        .light-mode .text-emerald-500 {
+            color: #059669 !important;
+        }
+
+        .light-mode .text-blue-500 {
+            color: #2563eb !important;
+        }
+
+        .light-mode .bg-cyan-500\/10 {
+            background-color: rgba(8, 145, 178, 0.1) !important;
+        }
+
+        .light-mode .bg-purple-500\/10 {
+            background-color: rgba(124, 58, 237, 0.1) !important;
+        }
+
+        .light-mode .bg-emerald-500\/10 {
+            background-color: rgba(5, 150, 105, 0.1) !important;
+        }
+
+        .light-mode .bg-blue-500\/10 {
+            background-color: rgba(37, 99, 235, 0.1) !important;
+        }
+
+        /* Subtext */
+        .light-mode .text-slate-400 {
+            color: #64748b !important;
+            /* slate-500 */
+        }
+
+        /* Gradients */
+        .light-mode .gradient-text {
+            background: linear-gradient(to right, #0891b2, #4f46e5);
+            /* Cyan-600 to Indigo-600 */
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        /* Scrollbar */
+        .light-mode ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+        }
+
+        .light-mode ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        /* Button Visibility Fixes */
+        .light-mode .text-white {
+            color: #ffffff !important;
+        }
+
+        .light-mode #btn-save-top .absolute,
+        .light-mode button[onclick="saveConfig()"] {
+            background: linear-gradient(to right, #0284c7, #2563eb) !important;
+            /* sky-600 to blue-600 */
+        }
+
+        .light-mode #btn-save-top {
+            color: #ffffff !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+        }
+    </style>
+</head>
+
+<body class="h-screen w-full overflow-hidden text-slate-200 flex flex-col bg-transparent p-4 lg:p-6">
+
+    <!-- Header (Compact) -->
+    <div class="shrink-0 flex justify-between items-center mb-4 md:mb-6 animate-fade-in-down">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-2">
+                <span class="gradient-text">System Configuration</span>
+            </h1>
+            <p class="text-slate-400 text-xs md:text-sm font-light">Global credentials & integrations.</p>
+        </div>
+
+        <button onclick="saveConfig()" id="btn-save-top"
+            class="group relative px-6 py-2 rounded-lg text-xs font-bold text-white shadow-lg overflow-hidden active:scale-95 transition-all duration-300">
+            <div
+                class="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 transition-transform duration-300 group-hover:scale-105">
+            </div>
+            <div class="relative flex items-center gap-2">
+                <span class="tracking-widest uppercase">Save</span>
+                <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+            </div>
+        </button>
+    </div>
+
+    <!-- Main Grid (2x2 Auto-Fit) -->
+    <div class="flex-1 overflow-y-auto custom-scrollbar">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-full pb-20">
+
+            <!-- 1. Firewall Settings -->
+            <div class="section-card rounded-xl p-5 relative overflow-hidden group flex flex-col">
+                <div
+                    class="absolute top-0 right-0 p-3 opacity-5 transition-opacity group-hover:opacity-10 pointer-events-none">
+                    <svg class="w-24 h-24 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                </div>
+
+                <h3 class="text-sm font-bold text-cyan-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                    Firewall
+                </h3>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-cyan-500/80 uppercase tracking-wider mb-1">Mgmt
+                            IP</label>
+                        <input type="text" id="cfg_FW_IP"
+                            class="input-glass w-full h-9 px-3 rounded-lg text-sm font-mono placeholder-slate-600 focus:ring-1 focus:ring-cyan-500"
+                            placeholder="10.0.0.1">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-cyan-500/80 uppercase tracking-wider mb-1">API
+                            Key</label>
+                        <div class="relative">
+                            <input type="password" id="cfg_PA_API_KEY"
+                                class="input-glass w-full h-9 px-3 pr-8 rounded-lg text-sm font-mono placeholder-slate-600 focus:ring-1 focus:ring-cyan-500"
+                                placeholder="••••••••">
+                            <button onclick="toggleVisibility('cfg_PA_API_KEY')"
+                                class="absolute right-2 top-2 text-slate-500 hover:text-cyan-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    id="icon-cfg_PA_API_KEY">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Directory Services -->
+            <div class="section-card rounded-xl p-5 relative overflow-hidden group flex flex-col">
+                <div
+                    class="absolute top-0 right-0 p-3 opacity-5 transition-opacity group-hover:opacity-10 pointer-events-none">
+                    <svg class="w-24 h-24 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </div>
+
+                <h3 class="text-sm font-bold text-purple-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    LDAP / AD
+                </h3>
+
+                <div class="space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label
+                                class="block text-[10px] font-bold text-purple-500/80 uppercase tracking-wider mb-1">Server
+                                IP</label>
+                            <input type="text" id="cfg_LDAP_SERVER"
+                                class="input-glass w-full h-9 px-3 rounded-lg text-xs" placeholder="10.10.10.10">
+                        </div>
+                        <div>
+                            <label
+                                class="block text-[10px] font-bold text-purple-500/80 uppercase tracking-wider mb-1">Domain</label>
+                            <input type="text" id="cfg_LDAP_DOMAIN"
+                                class="input-glass w-full h-9 px-3 rounded-lg text-xs" placeholder="corp.local">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-purple-500/80 uppercase tracking-wider mb-1">Base
+                            DN</label>
+                        <input type="text" id="cfg_LDAP_BASE_DN"
+                            class="input-glass w-full h-9 px-3 rounded-lg text-xs font-mono"
+                            placeholder="DC=corp,DC=local">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label
+                                class="block text-[10px] font-bold text-purple-500/80 uppercase tracking-wider mb-1">Admin
+                                Grp</label>
+                            <input type="text" id="cfg_LDAP_ADMIN_GROUP"
+                                class="input-glass w-full h-9 px-3 rounded-lg text-xs font-mono"
+                                placeholder="CN=Admins...">
+                        </div>
+                        <div>
+                            <label
+                                class="block text-[10px] font-bold text-purple-500/80 uppercase tracking-wider mb-1">User
+                                Grp</label>
+                            <input type="text" id="cfg_LDAP_USER_GROUP"
+                                class="input-glass w-full h-9 px-3 rounded-lg text-xs font-mono"
+                                placeholder="CN=Users...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Switch Management -->
+            <div class="section-card rounded-xl p-5 relative overflow-hidden group flex flex-col">
+                <div
+                    class="absolute top-0 right-0 p-3 opacity-5 transition-opacity group-hover:opacity-10 pointer-events-none">
+                    <svg class="w-24 h-24 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                </div>
+
+                <h3 class="text-sm font-bold text-emerald-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                    </svg>
+                    Switch Management
+                </h3>
+
+                <!-- TACACS -->
+                <div class="mb-4">
+                    <h4
+                        class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2 border-b border-emerald-500/20 pb-1">
+                        TACACS / Centralized</h4>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <input type="text" id="cfg_SWITCH_USER"
+                                class="input-glass w-full h-9 px-2 rounded-lg text-xs" placeholder="User">
+                        </div>
+                        <div class="relative">
+                            <input type="password" id="cfg_SWITCH_PASS"
+                                class="input-glass w-full h-9 px-2 pr-6 rounded-lg text-xs" placeholder="Pass">
+                            <button onclick="toggleVisibility('cfg_SWITCH_PASS')"
+                                class="absolute right-1 top-2.5 text-slate-500 hover:text-emerald-400 scale-75"><svg
+                                    class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    id="icon-cfg_SWITCH_PASS">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg></button>
+                        </div>
+                        <div class="relative">
+                            <input type="password" id="cfg_SWITCH_ENABLE"
+                                class="input-glass w-full h-9 px-2 pr-6 rounded-lg text-xs" placeholder="Enable">
+                            <button onclick="toggleVisibility('cfg_SWITCH_ENABLE')"
+                                class="absolute right-1 top-2.5 text-slate-500 hover:text-emerald-400 scale-75"><svg
+                                    class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    id="icon-cfg_SWITCH_ENABLE">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Local -->
+                <div>
+                    <h4
+                        class="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-2 border-b border-amber-500/20 pb-1">
+                        Local Fallback</h4>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="cfg_SWITCH_USER_LOCAL"
+                            class="input-glass w-full h-9 px-2 rounded-lg text-xs" placeholder="Local User">
+                        <div class="relative">
+                            <input type="password" id="cfg_SWITCH_PASS_LOCAL"
+                                class="input-glass w-full h-9 px-2 pr-6 rounded-lg text-xs" placeholder="Local Pass">
+                            <button onclick="toggleVisibility('cfg_SWITCH_PASS_LOCAL')"
+                                class="absolute right-1 top-2.5 text-slate-500 hover:text-amber-400 scale-75"><svg
+                                    class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    id="icon-cfg_SWITCH_PASS_LOCAL">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. ISE Configuration -->
+            <div class="section-card rounded-xl p-5 relative overflow-hidden group flex flex-col">
+                <div
+                    class="absolute top-0 right-0 p-3 opacity-5 transition-opacity group-hover:opacity-10 pointer-events-none">
+                    <svg class="w-24 h-24 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                    </svg>
+                </div>
+
+                <h3 class="text-sm font-bold text-blue-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                    </svg>
+                    Cisco ISE
+                </h3>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-blue-500/80 uppercase tracking-wider mb-1">Node
+                            IP</label>
+                        <input type="text" id="cfg_ISE_IP"
+                            class="input-glass w-full h-9 px-3 rounded-lg text-sm font-mono placeholder-slate-600"
+                            placeholder="10.20.20.20">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label
+                                class="block text-[10px] font-bold text-blue-500/80 uppercase tracking-wider mb-1">REST
+                                User</label>
+                            <input type="text" id="cfg_ISE_USER" class="input-glass w-full h-9 px-3 rounded-lg text-xs"
+                                placeholder="admin">
+                        </div>
+                        <div class="relative">
+                            <label
+                                class="block text-[10px] font-bold text-blue-500/80 uppercase tracking-wider mb-1">Password</label>
+                            <input type="password" id="cfg_ISE_PASSWORD"
+                                class="input-glass w-full h-9 px-3 pr-8 rounded-lg text-xs" placeholder="••••">
+                            <button onclick="toggleVisibility('cfg_ISE_PASSWORD')"
+                                class="absolute right-2 top-6 text-slate-500 hover:text-blue-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    id="icon-cfg_ISE_PASSWORD">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const FIELDS = [
+            'FW_IP', 'PA_API_KEY',
+            'LDAP_SERVER', 'LDAP_DOMAIN', 'LDAP_BASE_DN', 'LDAP_ADMIN_GROUP', 'LDAP_USER_GROUP',
+            'ISE_IP', 'ISE_USER', 'ISE_PASSWORD',
+            'SWITCH_USER', 'SWITCH_PASS', 'SWITCH_ENABLE',
+            'SWITCH_USER_LOCAL', 'SWITCH_PASS_LOCAL'
+        ];
+
+        function toggleVisibility(id) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById('icon-' + id);
+            if (el.type === 'password') {
+                el.type = 'text';
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />';
+            } else {
+                el.type = 'password';
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />';
+            }
+        }
+
+        async function loadConfig() {
+            try {
+                const res = await fetch('/admin/get-env-config');
+                const data = await res.json();
+
+                FIELDS.forEach(f => {
+                    const el = document.getElementById('cfg_' + f);
+                    if (el) el.value = data[f] || '';
+                });
+            } catch (e) {
+                console.error("Load Error:", e);
+                alert("Failed to load configuration.");
+            }
+        }
+
+        async function saveConfig() {
+            const btn = document.getElementById('btn-save-top');
+            const originalContent = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="animate-pulse">Saving...</span>';
+            }
+
+            const payload = {};
+            FIELDS.forEach(f => {
+                const el = document.getElementById('cfg_' + f);
+                if (el) payload[f] = el.value || '';
+            });
+
+            try {
+                const res = await fetch('/admin/update-env-config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const d = await res.json();
+                if (res.ok) {
+                    alert('Configuration Saved Successfully');
+                } else {
+                    alert('Error: ' + d.message);
+                }
+            } catch (e) {
+                alert('Connection Failed');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadConfig);
+    </script>
+</body>
+
+</html>

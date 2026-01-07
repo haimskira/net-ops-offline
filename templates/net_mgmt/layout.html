@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Net-Mgmt</title>
+    <!-- Use local font or system font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='net_mgmt/css/style.css') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- TODO: Localize FontAwesome or replace with SVG -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Override sidebar requirement for iframe embedding */
+        .app-container {
+            display: block !important;
+            /* Was grid */
+            height: 100vh;
+        }
+
+        .sidebar {
+            display: none !important;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+            width: 100% !important;
+            height: 100%;
+        }
+
+        body {
+            background-color: transparent !important;
+            /* Let parent background show if needed, or keep slate */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar" style="display:none;">
+                <!-- Hide top bar if redundant or keep for Search? Keep for now but maybe hide user profile -->
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Search devices...">
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    {% block scripts %}
+    {% endblock %}
+    <script>
+        // Theme Sync Logic
+        function applyTheme(isDark) {
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                document.documentElement.classList.remove('light');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.add('light');
+            }
+        }
+
+        // Listen for messages from parent
+        window.addEventListener('message', function (event) {
+            if (event.data && event.data.type === 'THEME_CHANGE') {
+                applyTheme(!event.data.isLight);
+            }
+        });
+
+        // Initial check
+        if (window.parent && window.parent.document.body.classList.contains('light-mode')) {
+            applyTheme(false);
+        } else {
+            applyTheme(true);
+        }
+    </script>
+</body>
+
+</html>

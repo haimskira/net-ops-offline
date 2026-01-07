@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  netops-app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: netops-portal:latest
+    container_name: netops-portal
+    ports:
+      - "5100:5100"
+      - "514:514/udp"
+    volumes:
+      # Mount the .env file from the host
+      - ./.env:/app/.env
+      
+      # Persist the SQLite database
+      - ./data/instance:/app/instance
+      
+      # Persist logs
+      - ./data/logs:/app/logs
+      
+    restart: unless-stopped
+    networks:
+      - netops-network
+
+networks:
+  netops-network:
+    driver: bridge

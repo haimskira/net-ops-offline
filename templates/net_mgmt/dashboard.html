@@ -1,0 +1,132 @@
+{% extends "net_mgmt/layout.html" %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Switch Infrastructure</h1>
+    <button id="scanBtn" class="btn-primary" onclick="triggerScan()">
+        <i class="fa-solid fa-rotate-right"></i> <span id="scanText">Scan Network</span>
+    </button>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="icon-wrapper cyan">
+            <i class="fa-solid fa-server"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ stats.total_switches }}</h3>
+            <p>Total Switches</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="icon-wrapper green">
+            <i class="fa-solid fa-ethernet"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ stats.active_ports }}</h3>
+            <p>Active Ports</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="icon-wrapper red">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ stats.total_errors }}</h3>
+            <p>Err-Disabled</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="icon-wrapper purple">
+            <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ stats.mab_failures }}</h3>
+            <p>Auth Failures</p>
+        </div>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="table-section glass-panel">
+    <div class="table-header">
+        <h2>Network Devices</h2>
+        <div class="table-actions">
+            <button class="btn-icon" onclick="toggleFilter()" title="Filter"><i class="fa-solid fa-filter"></i></button>
+            <button class="btn-icon" onclick="downloadCSV()" title="Export CSV"><i
+                    class="fa-solid fa-download"></i></button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Hostname</th>
+                    <th>IP Address</th>
+                    <th>Model</th>
+                    <th>Version</th>
+                    <th class="text-center">Active Ports</th>
+                    <th class="text-center">Status</th>
+                    <th>Uptime</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for switch in switches %}
+                <tr>
+                    <td class="fw-bold">
+                        <a href="{{ url_for('net_mgmt.device_details', hostname=switch.hostname) }}"
+                            style="color: var(--primary-cyan); text-decoration: none;">
+                            {{ switch.hostname }}
+                        </a>
+                    </td>
+                    <td class="font-mono">{{ switch.ip_address }}</td>
+                    <td>{{ switch.model }}</td>
+                    <td><span class="badge gray">{{ switch.os_version }}</span></td>
+                    <td class="text-center">{{ switch.active_ports_count }}</td>
+                    <td class="text-center">
+                        {% if switch.err_disabled_count > 0 or switch.mab_failed_count > 0 %}
+                        <span class="badge red">Issues</span>
+                        {% else %}
+                        <span class="badge green">Healthy</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-small">{{ switch.uptime[:20] if switch.uptime else 'N/A' }}...</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    async function triggerScan() {
+        const btn = document.getElementById('scanBtn');
+        const icon = btn.querySelector('i');
+        const text = document.getElementById('scanText');
+
+        // Loading State
+        icon.classList.add('fa-spin');
+        text.innerText = "Scanning...";
+        btn.disabled = true;
+
+        try {
+            const response = await fetch("{{ url_for('net_mgmt.scan_network') }}", { method: 'POST' });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                location.reload();
+            } else {
+                alert('Scan failed: ' + result.message);
+            }
+        } catch (error) {
+            alert('Error connecting to server');
+        } finally {
+            icon.classList.remove('fa-spin');
+            text.innerText = "Scan Network";
+            btn.disabled = false;
+        }
+    }
+</script>
+{% endblock %}

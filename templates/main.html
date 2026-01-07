@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>NET-OPS Admin Portal</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/glass-theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+    <style>
+        @font-face {
+            font-family: 'Assistant';
+            src: url("{{ url_for('static', filename='fonts/Assistant-Regular.ttf') }}") format('truetype');
+            font-weight: 300;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Assistant';
+            src: url("{{ url_for('static', filename='fonts/Assistant-Bold.ttf') }}") format('truetype');
+            font-weight: 700;
+            font-style: normal;
+        }
+
+        body {
+            font-family: 'Assistant', sans-serif !important;
+            margin: 0;
+            background-color: var(--bg-darker);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: row;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-dark);
+            border-right: 1px solid var(--border-glass);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 50;
+        }
+
+        .light-mode .sidebar {
+            background: var(--bg-dark);
+            /* Handles light mode via vars */
+            border-right: 1px solid var(--border-glass);
+        }
+
+        .nav-item {
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 8px;
+            margin: 2px 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(6, 182, 212, 0.1), transparent);
+            color: var(--primary-cyan);
+            border-left: 3px solid var(--primary-cyan);
+        }
+
+
+
+        /* Submenu */
+        .submenu {
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0, 1, 0, 1);
+            max-height: 0;
+            margin-left: 12px;
+            border-left: 1px solid var(--border-glass);
+        }
+
+        .submenu.open {
+            max-height: 500px;
+            transition: max-height 0.3s cubic-bezier(1, 0, 1, 0);
+        }
+
+        .submenu-item {
+            padding: 8px 16px 8px 12px;
+            /* Adjusted padding for border */
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border-radius: 0 8px 8px 0;
+            margin-right: 8px;
+            border-left: 3px solid transparent;
+            /* Prepare for hover border */
+            transition: all 0.2s;
+        }
+
+        .submenu-item:hover,
+        .submenu-item.active {
+            background: linear-gradient(90deg, rgba(6, 182, 212, 0.1), transparent);
+            color: var(--primary-cyan);
+            border-left: 3px solid var(--primary-cyan);
+        }
+
+        /* Ambient Background Blobs via CSS */
+        .ambient-blob {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            z-index: 0;
+            animation: float 10s ease-in-out infinite;
+        }
+
+        .blob-1 {
+            top: -20%;
+            right: -10%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.4) 0%, rgba(0, 0, 0, 0) 70%);
+            animation-delay: 0s;
+        }
+
+        .blob-2 {
+            bottom: -20%;
+            left: -10%;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, rgba(0, 0, 0, 0) 70%);
+            animation-delay: 5s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            50% {
+                transform: translate(20px, 20px) scale(1.1);
+            }
+
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+        }
+
+        .badge {
+            padding: 2px 6px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: auto;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-950 text-slate-100">
+
+    <!-- Ambient Background -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden">
+        <div class="ambient-blob blob-1"></div>
+        <div class="ambient-blob blob-2"></div>
+    </div>
+
+    <!-- Left Sidebar -->
+    <aside class="sidebar">
+        <!-- Branding -->
+        <div class="h-20 flex items-center px-6 gap-3 border-b border-white/5 cursor-pointer" onclick="closeAll()">
+            <div class="w-8 h-8
+             bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+            </div>
+            <div class="flex flex-col leading-none">
+                <span class="text-lg font-black tracking-tight text-slate-100">NET<span
+                        class="text-indigo-400 italic">OPS</span></span>
+                <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400">Security Portal</span>
+            </div>
+        </div>
+
+        <!-- Scrollable Menu -->
+        <div class="flex-1 overflow-y-auto py-4 custom-scroll space-y-1">
+
+            <div class="nav-item" onclick="toggleComponent('dashboard')">
+                <span>🏠</span>
+                <span>Dashboard</span>
+            </div>
+
+            <!-- Operate Group -->
+            <div>
+                <div class="nav-item" onclick="toggleSubmenu('submenu-operate')">
+                    <span>🛠️</span>
+                    <span>Operate</span>
+                    <span class="ml-auto text-xs text-slate-600 transition-transform" id="arrow-operate">▼</span>
+                </div>
+                <div id="submenu-operate" class="submenu">
+                    <div class="submenu-item" onclick="toggleComponent('palo-alto')">
+                        <span>🛡️</span> Rule Manager
+                    </div>
+                    <div class="submenu-item" onclick="toggleComponent('object-creator')">
+                        <span>📦</span> Object Creator
+                    </div>
+                    <div class="submenu-item" onclick="toggleComponent('policy-match')">
+                        <span>🔍</span> Policy Match
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monitoring Group -->
+            <div>
+                <div class="nav-item" onclick="toggleSubmenu('submenu-monitoring')">
+                    <span>📊</span>
+                    <span>Monitoring</span>
+                    <span class="ml-auto text-xs text-slate-600 transition-transform" id="arrow-monitoring">▼</span>
+                </div>
+                <div id="submenu-monitoring" class="submenu">
+                    <div class="submenu-item" onclick="toggleComponent('log-viewer')">
+                        <span>📜</span> Traffic Logs
+                    </div>
+                    {% if session.get('is_admin') %}
+                    <div class="submenu-item" onclick="toggleComponent('audit-logs')">
+                        <span>👣</span> Audit Logs
+                    </div>
+                    {% endif %}
+                    <div class="submenu-item" onclick="toggleComponent('policy-inventory')">
+                        <span>📋</span> Inventory
+                    </div>
+                </div>
+            </div>
+
+            <!-- Requests Group -->
+            <div>
+                <div class="nav-item" onclick="toggleSubmenu('submenu-requests')">
+                    <span>📝</span>
+                    <span>Requests</span>
+                    <span class="ml-auto text-xs text-slate-600 transition-transform" id="arrow-requests">▼</span>
+                </div>
+                <div id="submenu-requests" class="submenu">
+                    <div class="submenu-item" onclick="toggleComponent('my-requests')">
+                        <span>🛡️</span> Rule Status
+                    </div>
+                    <div class="submenu-item" onclick="toggleComponent('my-objects')">
+                        <span>📦</span> Object Status
+                    </div>
+                </div>
+            </div>
+
+            <!-- NetMgmt Group (Admin Only) -->
+            {% if session.get('is_admin') %}
+            <div>
+                <div class="nav-item" onclick="toggleSubmenu('submenu-netmgmt')">
+                    <span>🔌</span>
+                    <span>Network Utils</span>
+                    <span class="ml-auto text-xs text-slate-600 transition-transform" id="arrow-netmgmt">▼</span>
+                </div>
+                <div id="submenu-netmgmt" class="submenu">
+                    <div class="submenu-item" data-frame-src="{{ url_for('net_mgmt.dashboard') }}"
+                        onclick="toggleComponent('net-mgmt-dashboard'); resetIframe('net-mgmt-dashboard-frame', this.getAttribute('data-frame-src'))">
+                        <span>🖥️</span> Device Manager
+                    </div>
+                    <div class="submenu-item" onclick="toggleComponent('net-mgmt-topology')">
+                        <span>🕸️</span> Topology
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Admin Group -->
+            {% if session.get('is_admin') %}
+            <div class="border-t border-white/5 mt-2 pt-2">
+                <div class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Administrator
+                </div>
+                <div class="nav-item" onclick="toggleSubmenu('submenu-admin')">
+                    <span>⚡</span>
+                    <span>Admin Actions</span>
+
+                    <!-- Badges Sum -->
+                    <span id="badge-admin-total" class="badge bg-rose-500 text-white hidden">0</span>
+
+                    <span class="ml-auto text-xs text-slate-600 transition-transform" id="arrow-admin">▼</span>
+                </div>
+                <div id="submenu-admin" class="submenu">
+                    <div class="submenu-item" onclick="toggleComponent('admin-approval')">
+                        <span>✅</span> Rule Approval
+                        <span id="badge-rule-approval" class="badge bg-indigo-500 text-white hidden">0</span>
+                    </div>
+                    <div class="submenu-item" onclick="toggleComponent('object-approval')">
+                        <span>☑️</span> Object Approval
+                        <span id="badge-obj-approval" class="badge bg-purple-500 text-white hidden">0</span>
+                    </div>
+                    <div class="submenu-item" onclick="toggleComponent('env-config')">
+                        <span>⚙️</span> Environment Config
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- Admin Config Button (Only for Admins) -->
+        <!-- Legacy Admin Config Button Removed -->
+
+        <!-- User / Bottom -->
+        <div class="mt-auto border-t border-white/5 p-4">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold ring-2 ring-indigo-500/20">
+                    {{ session.get('user')[0] | upper }}
+                </div>
+                <div class="flex flex-col overflow-hidden">
+                    <span class="text-xs font-bold text-slate-200 truncate">{{ session.get('user') }}</span>
+                    <span class="text-[9px] text-emerald-400 font-bold uppercase">Online</span>
+                </div>
+                <button onclick="ThemeManager.toggle()"
+                    class="ml-auto text-slate-500 hover:text-amber-400 transition-colors">☀</button>
+                <a href="/logout" class="text-slate-500 hover:text-rose-400 transition-colors">⏻</a>
+            </div>
+        </div>
+    </aside>
+
+
+    <!-- Config Modal -->
+    <!-- Config Modal -->
+    <!-- Config Modal Removed (Moved to dedicated page) -->
+
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col p-4 z-10 overflow-hidden relative">
+
+        <main
+            class="flex-1 rounded-2xl border border-white/5 shadow-2xl overflow-hidden relative backdrop-blur-sm bg-slate-900/40 w-full h-full">
+
+            <!-- Welcome View -->
+            <div id="welcome-view"
+                class="fade-in absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                <!-- Glowing Decoration -->
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
+                    <div class="w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px]"></div>
+                </div>
+                <div class="relative z-10">
+                    <h1 class="text-6xl md:text-8xl font-black mb-2 tracking-tighter text-slate-100">NET<span
+                            class="italic text-indigo-500">OPS</span></h1>
+                    <div
+                        class="h-1 w-24 bg-indigo-500 mx-auto rounded-full mb-8 shadow-[0_0_20px_rgba(99,102,241,0.5)]">
+                    </div>
+                    <p class="text-2xl text-slate-300 font-light tracking-wide mb-2">Centralized Security Management</p>
+                    <p class="text-sm text-slate-500 uppercase tracking-[0.3em] font-bold">Version 2.0 • Offline Edition
+                    </p>
+                </div>
+            </div>
+
+            <!-- Content Iframes (Hidden by default) -->
+            <div id="dashboard-view" class="hidden absolute inset-0 w-full h-full"><iframe id="dashboard-iframe"
+                    src="/dashboard" class="opacity-0 transition-opacity duration-500 w-full h-full"
+                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+            <div id="palo-alto-view" class="hidden absolute inset-0 w-full h-full"><iframe id="rule-manager-iframe"
+                    src="/palo-manager" class="opacity-0 transition-opacity duration-500 w-full h-full"
+                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+            <div id="object-creator-view" class="hidden absolute inset-0 w-full h-full"><iframe
+                    id="object-creator-iframe" src="/object-creator"
+                    class="opacity-0 transition-opacity duration-500 w-full h-full"
+                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+            <div id="policy-match-view" class="hidden absolute inset-0 w-full h-full"><iframe src="/policy-match-tool"
+                    class="opacity-0 transition-opacity duration-500 w-full h-full"
+                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+            <div id="policy-inventory-view" class="hidden absolute inset-0 w-full h-full"><iframe
+                    id="policy-inventory-iframe" src="about:blank"
+                    class="opacity-0 transition-opacity duration-500 w-full h-full"
+                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+            <div id="log-viewer-view" class="hidden absolute inset-0 w-full h-full"><iframe id="traffic-logs-iframe"
+                    src="about:blank" class="opacity-0 transition-opacity duration-500 w-full h-full"
+                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+            <div id="my-requests-view" class="hidden absolute inset-0 w-full h-full"><iframe src="/my-requests-tool"
+                    class="opacity-0 transition-opacity duration-500 w-full h-full"
+                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+            <div id="my-objects-view" class="hidden absolute inset-0 w-full h-full"><iframe src="/my-objects-tool"
+                    class="opacity-0 transition-opacity duration-500 w-full h-full"
+                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+            <div id="admin-approval-view" class="hidden absolute inset-0 w-full h-full"><iframe id="approval-iframe"
+                    src="/admin-approval-tool" class="opacity-0 transition-opacity duration-500 w-full h-full"
+                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+            <div id="object-approval-view" class="hidden absolute inset-0 w-full h-full"><iframe
+                    src="/object-approval-tool" class="opacity-0 transition-opacity duration-500 w-full h-full"
+                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+            <div id="audit-logs-view" class="hidden absolute inset-0 w-full h-full"><iframe id="audit-logs-iframe"
+                    src="about:blank" class="opacity-0 transition-opacity duration-500 w-full h-full"
+                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+
+            <!-- NetMgmt Views -->
+            <div id="net-mgmt-dashboard-view" class="hidden absolute inset-0 w-full h-full"><iframe id="net-mgmt-iframe"
+                    src="about:blank" class="opacity-0 transition-opacity duration-500 w-full h-full"
+                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+            <div id="net-mgmt-topology-view" class="hidden absolute inset-0 w-full h-full"><iframe
+                    id="net-mgmt-topology-iframe" src="about:blank"
+                    class="opacity-0 transition-opacity duration-500 w-full h-full"
+                    onload="this.classList.remove('opacity-0'); syncThemeToFrame(this)"></iframe></div>
+
+            <!-- Env Config View -->
+            <div id="env-config-view" class="hidden h-full flex flex-col animate-fade-in">
+                <div
+                    class="glass-panel rounded-2xl p-1 flex-1 shadow-2xl overflow-hidden relative border border-[var(--border-glass)]">
+                    <iframe id="env-config-iframe" src="about:blank" class="w-full h-full rounded-xl bg-transparent"
+                        allowtransparency="true"></iframe>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Logic -->
+    <!-- Config Modal moved to end for Z-Index safety -->
+    <!-- Config Modal moved to end for Z-Index safety -->
+
+    <script>
+        const views = [
+            'dashboard-view',
+            'palo-alto-view', 'object-creator-view', 'policy-match-view',
+            'log-viewer-view', 'my-requests-view', 'my-objects-view',
+            'admin-approval-view', 'object-approval-view',
+            'policy-inventory-view', 'audit-logs-view',
+            'net-mgmt-dashboard-view', 'net-mgmt-topology-view',
+            'env-config-view'
+        ];
+
+        function toggleSubmenu(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.toggle('open');
+                const arrow = document.getElementById('arrow-' + id.split('-')[1]);
+                if (arrow) arrow.style.transform = el.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
+        }
+
+        // Legacy Modal Functions Removed (Moved to /admin/config-page)
+
+        function syncThemeToFrame(iframe) {
+            if (!iframe) return;
+            const isLight = document.documentElement.classList.contains('light-mode');
+            const trySync = () => {
+                if (!iframe.contentDocument) return;
+                try {
+                    if (isLight) iframe.contentDocument.documentElement.classList.add('light-mode');
+                    else iframe.contentDocument.documentElement.classList.remove('light-mode');
+                } catch (e) { }
+                try {
+                    iframe.contentWindow.postMessage({ type: 'THEME_CHANGE', isLight }, '*');
+                } catch (e) { }
+            };
+            setTimeout(trySync, 100);
+            setTimeout(trySync, 500);
+        }
+
+        function resetIframe(id, url) {
+            const frame = document.getElementById(id);
+            if (frame) {
+                frame.src = url;
+            }
+        }
+
+        function toggleComponent(compId) {
+            closeAll();
+            const view = document.getElementById(compId + '-view');
+
+            // Lazy Loading Logic
+            if (compId === 'log-viewer') {
+                const logsFrame = document.getElementById('traffic-logs-iframe');
+                if (logsFrame && logsFrame.src === "about:blank") logsFrame.src = "/log-viewer";
+            }
+            if (compId === 'policy-inventory') {
+                const invFrame = document.getElementById('policy-inventory-iframe');
+                if (invFrame && invFrame.src === "about:blank") invFrame.src = "/policy-inventory";
+            }
+            if (compId === 'audit-logs') {
+                const auditFrame = document.getElementById('audit-logs-iframe');
+                if (auditFrame && auditFrame.src === "about:blank") auditFrame.src = "/audit-logs";
+            }
+            if (compId === 'net-mgmt-dashboard') {
+                const nmFrame = document.getElementById('net-mgmt-iframe');
+                // Ensure we point to the blueprint prefix
+                if (nmFrame && nmFrame.src === "about:blank") nmFrame.src = "/net-mgmt/";
+            }
+            if (compId === 'net-mgmt-topology') {
+                const topoFrame = document.getElementById('net-mgmt-topology-iframe');
+                if (topoFrame && topoFrame.src === "about:blank") topoFrame.src = "/net-mgmt/topology";
+            }
+            if (compId === 'env-config') {
+                const cfgFrame = document.getElementById('env-config-iframe');
+                if (cfgFrame && cfgFrame.src === "about:blank") cfgFrame.src = "/admin/config-page";
+            }
+
+            if (view) {
+                view.classList.remove('hidden');
+                document.getElementById('welcome-view').classList.add('hidden');
+                const iframe = view.querySelector('iframe');
+                if (iframe) syncThemeToFrame(iframe);
+            }
+        }
+
+        window.toggleComponent = toggleComponent;
+
+        // Auto-load Dashboard
+        window.onload = function () {
+            setTimeout(() => toggleComponent('dashboard'), 100);
+            updateBadges();
+        };
+
+        function closeAll() {
+            views.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+            document.getElementById('welcome-view').classList.remove('hidden');
+        }
+
+        window.addEventListener('message', function (event) {
+            if (event.data.type === 'UPDATE_COUNTER') {
+                // Forward to new badges if needed
+            }
+            if (event.data.type === 'FILL_RULE') {
+                toggleSubmenu('submenu-operate');
+                toggleComponent('palo-alto');
+                setTimeout(() => {
+                    const managerIframe = document.getElementById('rule-manager-iframe');
+                    if (managerIframe && managerIframe.contentWindow) {
+                        managerIframe.contentWindow.postMessage(event.data, '*');
+                    }
+                }, 600);
+            }
+        });
+
+        async function updateBadges() {
+            try {
+                const [rRes, oRes] = await Promise.all([
+                    fetch('/get-admin-view-rules'),
+                    fetch('/get-admin-view-objects')
+                ]);
+
+                // Only if available (admin)
+                if (rRes.status === 403) return;
+
+                const rData = await rRes.json();
+                const oData = await oRes.json();
+
+                const pendingRules = Array.isArray(rData) ? rData.filter(r => (r.status || '').toLowerCase() === 'pending').length : 0;
+                const pendingObjs = Array.isArray(oData) ? oData.filter(o => (o.status || '').toLowerCase() === 'pending').length : 0;
+
+                // Helpers
+                const setBadge = (id, count) => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.innerText = count;
+                        el.classList.toggle('hidden', count == 0);
+                    }
+                }
+
+                setBadge('badge-rule-approval', pendingRules);
+                setBadge('badge-obj-approval', pendingObjs);
+                setBadge('badge-admin-total', pendingRules + pendingObjs);
+
+                // Auto-open admin group if requests pending
+                if ((pendingRules + pendingObjs) > 0) {
+                    const adminSub = document.getElementById('submenu-admin');
+                    if (adminSub && !adminSub.classList.contains('open')) toggleSubmenu('submenu-admin');
+                }
+
+            } catch (e) {
+                console.error("Badge sync error:", e);
+            }
+        }
+
+        setInterval(updateBadges, 15000);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,106 @@
+/* Light Mode Overrides */
+:root {
+    /* Define standard variables if needed, but we mainly override in .light-mode */
+}
+
+/* Force light mode inversion primarily by swapping slate colors */
+.light-mode {
+    /* Backgrounds become light */
+    --color-slate-950: #f8fafc;
+    /* slate-50 */
+    --color-slate-900: #f1f5f9;
+    /* slate-100 */
+    --color-slate-800: #e2e8f0;
+    /* slate-200 */
+    --color-slate-700: #cbd5e1;
+    /* slate-300 */
+
+    /* Text becomes dark */
+    --color-slate-50: #020617;
+    /* slate-950 */
+    --color-slate-100: #0f172a;
+    /* slate-900 */
+    --color-slate-200: #1e293b;
+    /* slate-800 */
+    --color-slate-300: #334155;
+    /* slate-700 */
+
+    /* Midtones */
+    --color-slate-400: #475569;
+    /* slate-600 */
+    --color-slate-600: #94a3b8;
+    /* slate-400 */
+
+    /* Basic Colors */
+    --color-white: #0f172a;
+    /* Dark text for things using white */
+    --color-black: #ffffff;
+
+    /* Adjust specific text colors if they use specific tailwind classes 
+       Note: This approach relies on the fact that Tailwind v4 uses these variables.
+    */
+
+    /* Gradients and specific overrides */
+    --bg-main-gradient: radial-gradient(circle at top right, #f1f5f9, #f8fafc, #ffffff);
+}
+
+/* Apply specific styles that might need manual override if variables aren't enough */
+.light-mode body {
+    color: var(--color-slate-100);
+    background-color: var(--color-slate-950);
+}
+
+.light-mode nav {
+    background-color: var(--color-slate-900);
+    border-bottom: 1px solid var(--color-slate-800);
+}
+
+.light-mode .glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: var(--color-slate-100);
+}
+
+/* Ensure Inputs are visible in light mode */
+.light-mode input,
+.light-mode select,
+.light-mode textarea {
+    background-color: #ffffff;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+/* Choices.js Light Mode overrides */
+.light-mode .choices__inner {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+.light-mode .choices__list--dropdown {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+.light-mode .choices__item {
+    color: #0f172a !important;
+}
+
+/* Dropdown Menu Styles for Navbar */
+/* FIXED: Removed visibility/opacity rules that conflicted with Tailwind's 'hidden' class */
+/* FIXED: Removed top/right/width to allow utility classes to control positioning */
+.dropdown-menu {
+    position: absolute;
+    background-color: var(--color-slate-800);
+    /* Will be light in light-mode due to var swap */
+    border: 1px solid var(--color-slate-700);
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem;
+    z-index: 100;
+}
+
+.nav-item-dropdown:hover .dropdown-menu {
+    /* Optional */
+}

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NET-OPS | Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=2.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+    <style>
+        /* הגדרת פונט אסיסטנט */
+        @font-face {
+            font-family: 'Assistant';
+            src: url("{{ url_for('static', filename='fonts/Assistant-Regular.ttf') }}") format('truetype');
+            font-weight: 400;
+        }
+
+        @font-face {
+            font-family: 'Assistant';
+            src: url("{{ url_for('static', filename='fonts/Assistant-Bold.ttf') }}") format('truetype');
+            font-weight: 700;
+        }
+
+        body {
+            font-family: 'Assistant', sans-serif !important;
+            background-color: var(--color-slate-950);
+            color: var(--color-slate-100);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* רקע מדורג מותאם אישית */
+        .bg-custom-gradient {
+            background: radial-gradient(circle at top right, var(--color-slate-900), var(--color-slate-950), #000000) !important;
+        }
+
+        /* Light mode gradient override via theme.css logic (variables swap) or manual override */
+        /* Since we use vars, it might work, but #000000 is hardcoded. */
+        .light-mode .bg-custom-gradient {
+            background: radial-gradient(circle at top right, var(--color-slate-100), var(--color-slate-50), #ffffff) !important;
+        }
+
+        .login-card {
+            background-color: var(--color-slate-900);
+            /* Fallback */
+            background: rgba(var(--color-slate-900-rgb, 15, 23, 42), 0.5);
+            /* Hard to map alpha with vars unless distinct vars */
+            /* Let's just use the variable which swamps plain colors */
+            background-color: var(--color-slate-900);
+            border-color: var(--color-slate-800);
+        }
+
+        .light-mode .login-card {
+            background-color: #ffffff;
+            border-color: var(--color-slate-200);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+        }
+
+        input {
+            background-color: var(--color-slate-950) !important;
+            border-color: var(--color-slate-800) !important;
+            color: var(--color-slate-100) !important;
+        }
+    </style>
+</head>
+
+<body class="bg-custom-gradient min-h-screen flex items-center justify-center p-6">
+
+    <div class="w-full max-w-md login-card backdrop-blur-xl border p-10 rounded-[2.5rem] shadow-2xl">
+        <div class="text-center mb-10">
+            <span class="text-3xl font-black text-indigo-500 italic tracking-tighter">NET-OPS</span>
+            <h1 class="text-xl font-bold mt-4">System Login</h1>
+            <p class="text-slate-500 text-sm mt-2">Authentication via Active Directory</p>
+        </div>
+
+        <form method="POST" action="/login" class="space-y-6">
+            <div>
+                <label
+                    class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Username</label>
+                <input type="text" name="username" required autofocus
+                    class="w-full rounded-2xl p-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700"
+                    placeholder="Username">
+            </div>
+
+            <div>
+                <label
+                    class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Password</label>
+                <input type="password" name="password" required
+                    class="w-full rounded-2xl p-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700"
+                    placeholder="••••••••">
+            </div>
+
+            {% if error %}
+            <div
+                class="bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm p-4 rounded-xl text-center font-bold">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <button type="submit"
+                class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-900/20 transition-all transform active:scale-[0.98]">
+                Login Now
+            </button>
+        </form>
+
+        <div class="mt-8 text-center">
+            <p class="text-slate-600 text-xs">System intended for Network Engineering and InfoSec teams only</p>
+        </div>
+    </div>
+
+</body>
+
+</html>
