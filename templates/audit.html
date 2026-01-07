@@ -23,8 +23,7 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-
-
+        /* --- Glass Panel & Table --- */
         .glass-panel {
             background: rgba(30, 41, 59, 0.7);
             backdrop-filter: blur(12px);
@@ -32,11 +31,7 @@
             border-radius: 20px;
             overflow: hidden;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-        }
-
-        .light-mode .glass-panel {
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
         }
 
         .table-container {
@@ -57,14 +52,11 @@
             padding: 15px;
             color: var(--color-slate-400);
             font-size: 12px;
-            border-bottom: 2px solid var(--color-slate-700);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--color-slate-700);
             z-index: 10;
-        }
-
-        .light-mode thead th {
-            background: var(--color-slate-100);
-            color: var(--color-slate-600);
-            border-bottom: 2px solid var(--color-slate-200);
+            transition: background 0.3s, color 0.3s, border-bottom 0.3s;
         }
 
         tbody tr {
@@ -72,60 +64,55 @@
             transition: background 0.2s;
         }
 
-        .light-mode tbody tr {
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
         tbody tr:hover {
             background: rgba(255, 255, 255, 0.02);
         }
 
-        .light-mode tbody tr:hover {
-            background: rgba(0, 0, 0, 0.02);
-        }
-
         td {
-            padding: 12px 15px;
-            font-size: 13px;
+            padding: 14px 15px;
+            font-size: 14px;
             color: var(--color-slate-300);
+            vertical-align: middle;
         }
 
-        .light-mode td {
-            color: var(--color-slate-700);
-        }
-
+        /* --- Components --- */
         .timestamp {
-            color: #6366f1;
+            color: #818cf8; /* Light Indigo */
             font-family: monospace;
-            font-size: 12px;
+            font-size: 13px;
         }
 
         .user-tag {
-            background: var(--color-slate-700);
-            padding: 2px 8px;
+            background: var(--color-slate-800);
+            padding: 4px 10px;
             border-radius: 6px;
-            font-weight: bold;
+            font-weight: 500;
             color: var(--color-slate-200);
-        }
-
-        .light-mode .user-tag {
-            background: var(--color-slate-200);
-            color: var(--color-slate-800);
+            font-size: 13px;
+            display: inline-block;
         }
 
         .action-badge {
             padding: 4px 10px;
             border-radius: 8px;
             font-size: 11px;
-            font-weight: bold;
-            background: rgba(99, 102, 241, 0.1);
-            color: #818cf8;
-            border: 1px solid rgba(99, 102, 241, 0.2);
+            font-weight: 700;
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            display: inline-block;
+            text-transform: uppercase;
         }
 
-        .light-mode .action-badge {
-            color: #6366f1;
-            border-color: rgba(99, 102, 241, 0.3);
+        .resource-name {
+            font-weight: 600;
+            color: var(--color-slate-200);
+        }
+
+        .resource-details {
+            font-size: 12px;
+            color: var(--color-slate-500);
+            margin-top: 4px;
         }
 
         /* Custom Scrollbar */
@@ -138,8 +125,61 @@
             border-radius: 4px;
         }
 
+        /* --- LIGHT MODE OVERRIDES --- */
+        .light-mode body {
+            background-color: #f1f5f9; /* Slate 100 */
+            color: #334155; /* Slate 700 */
+        }
+
+        .light-mode .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(203, 213, 225, 0.6); /* Slate 300 */
+        }
+
+        .light-mode thead th {
+            background: #f8fafc; /* Slate 50 */
+            color: #64748b; /* Slate 500 */
+            border-bottom: 1px solid #e2e8f0; /* Slate 200 */
+        }
+
+        .light-mode tbody tr {
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .light-mode tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .light-mode td {
+            color: #475569; /* Slate 600 */
+        }
+
+        .light-mode .timestamp {
+            color: #4f46e5; /* Indigo 600 */
+        }
+
+        .light-mode .user-tag {
+            background: #e2e8f0; /* Slate 200 */
+            color: #334155; /* Slate 700 */
+        }
+
+        .light-mode .action-badge {
+            background: rgba(99, 102, 241, 0.1);
+            color: #4f46e5;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .light-mode .resource-name {
+            color: #1e293b; /* Slate 800 */
+        }
+
+        .light-mode .resource-details {
+            color: #94a3b8; /* Slate 400 */
+        }
+
         .light-mode .table-container::-webkit-scrollbar-thumb {
-            background: var(--color-slate-300);
+            background: #cbd5e1; /* Slate 300 */
         }
     </style>
 </head>
@@ -150,13 +190,12 @@
         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
         <div>
             <h1 class="text-indigo-400 font-bold text-2xl m-0 light-mode:text-indigo-600">Audit Logs</h1>
-            <p class="text-slate-500 text-sm mt-1 light-mode:text-slate-500">Track configuration changes and admin
-                actions
-            </p>
+            <p class="text-slate-500 text-sm mt-1">Track configuration changes and admin actions</p>
         </div>
         <button onclick="window.location.reload()"
-            class="bg-slate-700 text-white border-0 py-2 px-5 rounded-xl cursor-pointer hover:bg-slate-600 transition-colors light-mode:bg-slate-200 light-mode:text-slate-700 light-mode:hover:bg-slate-300">Refresh
-            Logs 🔄</button>
+            class="bg-slate-700 text-white border-0 py-2 px-5 rounded-xl cursor-pointer hover:bg-slate-600 transition-colors light-mode:bg-white light-mode:text-slate-700 light-mode:border light-mode:border-slate-200 light-mode:hover:bg-slate-50 light-mode:shadow-sm">
+            Refresh Logs 🔄
+        </button>
     </div>
 
     <div class="glass-panel">
@@ -177,17 +216,17 @@
                         <td class="timestamp">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                         <td><span class="user-tag">{{ log.user }}</span></td>
                         <td><span class="action-badge">{{ log.action }}</span></td>
-                        <td class="text-slate-400 light-mode:text-slate-500">{{ log.resource_type }}</td>
+                        <td>{{ log.resource_type }}</td>
                         <td>
-                            <div class="font-bold text-slate-100 light-mode:text-slate-800">{{ log.resource_name }}
-                            </div>
-                            <div class="text-[11px] text-slate-500 mt-1">{{ log.details }}</div>
+                            <div class="resource-name">{{ log.resource_name }}</div>
+                            <div class="resource-details">{{ log.details }}</div>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 40px;" class="text-slate-500">No entries
-                            found in log</td>
+                        <td colspan="5" style="text-align: center; padding: 40px;" class="text-slate-500">
+                            No entries found in log
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

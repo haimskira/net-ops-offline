@@ -209,10 +209,82 @@ def require_login():
     if 'user' not in session and request.endpoint not in allowed:
         return redirect(url_for('auth.login'))
 
+
+# --------------------------------------------------------------------------
+# 6. תחזוקת מסד נתונים (Maintenance Worker)
+# --------------------------------------------------------------------------
+def maintenance_worker(flask_app: Flask) -> None:
+    """
+    Thread לתחזוקה תקופתית:
+    1. בדיקת גודל קובץ לוגים (Traffic Logs).
+    2. מחיקת רשומות ישנות אם חורג מהגודל המוגדר.
+    3. ביצוע VACUUM לשחרור מקום בדיסק.
+    """
+    from sqlalchemy import text
+    
+    logger.info("🛠️ Maintenance Worker initialized.")
+    
+    # בדיקה ראשונה אחרי 10 שניות (כדי לא להעמיס בעלייה), אח"כ כל 10 דקות
+    time.sleep(10)
+    
+    while True:
+        try:            
+            log_db_path = Config.DATA_DIR / 'traffic_logs.db'
+            
+            if log_db_path.exists():
+                size_mb = log_db_path.stat().st_size / (1024 * 1024)
+                limit_mb = getattr(Config, 'LOGS_DB_MAX_MB', 100) # Default 100MB
+                
+                if size_mb > limit_mb:
+                    logger.warning(f"⚠️ Traffic DB size ({size_mb:.2f}MB) exceeds limit ({limit_mb}MB). Starting cleanup...")
+                    
+                    with flask_app.app_context():
+                        # 1. מחיקת רשומות ישנות - השארת 100,000 אחרונים
+                        # שליפת ה-ID המקסימלי
+                        max_id_res = db_sql.session.execute(text("SELECT MAX(id) FROM traffic_logs"), bind_arguments={'bind': db_sql.get_engine(bind='logs')}).scalar()
+                        
+                        if max_id_res:
+                            cutoff_id = max_id_res - 100000
+                            if cutoff_id > 0:
+                                logger.info(f"🧹 Deleting logs with ID < {cutoff_id}...")
+                                # שימוש ב-bind ספציפי ללוגים
+                                db_sql.session.execute(
+                                    text(f"DELETE FROM traffic_logs WHERE id < {cutoff_id}"),
+                                    bind_arguments={'bind': db_sql.get_engine(bind='logs')}
+                                )
+                                db_sql.session.commit()
+                                logger.info("✅ Cleanup complete.")
+                                
+                                # 2. ביצוע VACUUM להקטנת הקובץ פיזית
+                                logger.info("🧽 Running VACUUM on traffic_logs (this may take a while)...")
+                                try:
+                                    # VACUUM לא יכול לרוץ בתוך טרנזקציה פתוחה בדרך כלל, תלוי דרייבר
+                                    # ב-SQLAlchemy עם bind=logs
+                                    engine = db_sql.get_engine(bind='logs')
+                                    with engine.connect() as conn:
+                                        conn.execute(text("VACUUM"))
+                                    logger.info("✨ VACUUM complete. Disk space reclaimed.")
+                                except Exception as v_err:
+                                    logger.error(f"❌ VACUUM Failed: {v_err}")
+                            else:
+                                logger.info("ℹ️ Not enough logs to purge yet.")
+                        else:
+                            logger.info("ℹ️ Traffic log table appears empty.")
+
+            else:
+                logger.debug("Maintenance: Traffic DB file not found yet.")
+
+        except Exception as e:
+            logger.error(f"❌ Maintenance Worker Error: {e}")
+        
+        # הרצה כל 10 דקות
+        time.sleep(600)
+
 if __name__ == '__main__':
     threads = [
         threading.Thread(target=syslog_listener, args=(app,), name="SyslogThread", daemon=True),
-        threading.Thread(target=auto_sync_worker, args=(app,), name="SyncThread", daemon=True)
+        threading.Thread(target=auto_sync_worker, args=(app,), name="SyncThread", daemon=True),
+        threading.Thread(target=maintenance_worker, args=(app,), name="MaintThread", daemon=True)
     ]
     for t in threads: t.start()
     app.run(debug=True, host='0.0.0.0', port=5100, use_reloader=False)
